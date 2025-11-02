@@ -45,13 +45,16 @@ npm install -g obsidian-http-mcp
 
 #### Step 2: Configure the server
 
-```bash
-# Copy example config
-cp .env.example .env
+```powershell
+# Windows PowerShell
+Copy-Item .env.example .env
+notepad .env
+```
 
-# Edit .env and paste your API key
-notepad .env  # Windows
-nano .env     # Linux/Mac
+```bash
+# Linux/Mac
+cp .env.example .env
+nano .env
 ```
 
 Your `.env` should look like:
