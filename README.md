@@ -21,8 +21,10 @@
 
 ### Prerequisites
 
-1. **Obsidian** with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api) installed
-2. **Node.js** 18+ (already required for Obsidian)
+1. **[Obsidian](https://obsidian.md/)** - The note-taking app
+2. **[Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)** - Install from Obsidian Community Plugins
+3. **Node.js** 18+ - [Download here](https://nodejs.org/)
+4. **npm** - Comes with Node.js
 
 ### Installation
 
@@ -32,9 +34,12 @@ npm install -g obsidian-http-mcp
 
 ### Configuration
 
-#### Step 1: Get your Obsidian API key
-- Open Obsidian → Settings → Local REST API
-- Copy the API key
+#### Step 1: Install & Configure Obsidian Plugin
+
+1. Open Obsidian → Settings → Community Plugins → Browse
+2. Search "Local REST API" → Install → Enable
+3. Settings → Local REST API → Copy the API key
+4. Verify plugin is running (should show port 27123)
 
 #### Step 2: Start the server
 
@@ -122,6 +127,7 @@ PORT=3000
 # Start with env file
 obsidian-http-mcp
 ```
+
 ## 🏗️ Architecture
 
 ```text
@@ -152,10 +158,12 @@ obsidian-http-mcp
 ### Path Format (Obsidian REST API Requirement)
 
 **Directories must end with `/`**:
+
 - ✅ Correct: `list_files("Projects/")`
 - ❌ Wrong: `list_files("Projects")`
 
 **Files must NOT end with `/`**:
+
 - ✅ Correct: `read_file("Notes/meeting.md")`
 - ❌ Wrong: `read_file("Notes/meeting.md/")`
 
