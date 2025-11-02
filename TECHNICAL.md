@@ -213,7 +213,7 @@ obsidian-http-mcp/
 
 #### 1. `list_dir`
 
-**Description**: List subdirectories in a path
+**Description**: List subdirectories in a path. IMPORTANT: Paths must end with / for directories (e.g., "BUSINESS/" not "BUSINESS")
 
 **Input**:
 
@@ -237,7 +237,7 @@ obsidian-http-mcp/
 
 #### 2. `list_files`
 
-**Description**: List files in a directory
+**Description**: List files in a directory. IMPORTANT: Directory paths must end with / (e.g., "Notes/" not "Notes")
 
 **Input**:
 
@@ -267,7 +267,7 @@ obsidian-http-mcp/
 
 #### 3. `read_file`
 
-**Description**: Read content of a file
+**Description**: Read content of a file. Use file path WITHOUT trailing slash (e.g., "Notes/meeting.md")
 
 **Input**:
 
@@ -395,7 +395,7 @@ obsidian-http-mcp/
 
 #### 7. `delete_file`
 
-**Description**: Delete a file
+**Description**: Delete a file (requires confirm: true)
 
 **Input**:
 
