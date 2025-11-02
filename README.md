@@ -106,9 +106,10 @@ claude
 | `list_files` | List files in a directory | Get notes in /Projects |
 | `read_file` | Read note content | Read daily note |
 | `write_file` | Create or update note | Create meeting note |
-| `search` | Grep-like search in vault | Find "todo" across notes |
+| `search` | Grep-like search recursively | Find "todo" across notes |
 | `move_file` | Move/rename notes | Move note to archive |
-| `delete_file` | Delete note | Delete draft |
+| `delete_file` | Delete note (soft delete) | Delete draft |
+| `delete_folder` | Delete folder recursively | Delete archive folder |
 | `find_files` | Search files by name (fuzzy) | Find files about "meeting" |
 
 ### Smart File Search
@@ -142,7 +143,17 @@ Result: Success
 
 ### Safe File Deletion
 
-Files are **soft deleted by default** - moved to `.trash-http-mcp/` folder instead of permanent deletion. This protects against accidental data loss from AI operations. To restore deleted files, open the `.trash-http-mcp/` folder in Obsidian and move files back manually. For irreversible deletion, set `permanent: true`.
+Files and folders are **soft deleted by default** - moved to `.trash-http-mcp/` instead of permanent deletion. This protects against accidental data loss from AI operations.
+
+**Trash Locations**:
+- Single file: `.trash-http-mcp/{ISO8601-timestamp}_{filename}`
+- Folder: `.trash-http-mcp/{ISO8601-timestamp}/{original/folder/structure}/`
+
+**Recovery**: Open `.trash-http-mcp/` in Obsidian and move files back manually.
+
+**Permanent Deletion**: Set `permanent: true` for irreversible deletion (use with caution).
+
+**Limitation**: Empty folders remain after folder deletion (Obsidian API has no folder deletion endpoint).
 
 ### Why HTTP Native?
 

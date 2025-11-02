@@ -324,7 +324,7 @@ obsidian-http-mcp/
 
 #### 5. `search`
 
-**Description**: Search for text across all files
+**Description**: Search for text recursively across entire vault (all subdirectories)
 
 **Input**:
 
@@ -395,14 +395,15 @@ obsidian-http-mcp/
 
 #### 7. `delete_file`
 
-**Description**: Delete a file (requires confirm: true)
+**Description**: Delete a file with soft delete by default. Moves to `.trash-http-mcp/` for recovery unless `permanent: true`.
 
 **Input**:
 
 ```typescript
 {
-  path: string;        // Required
-  confirm?: boolean;   // Default: false (requires true)
+  path: string;         // Required
+  confirm?: boolean;    // Required: must be true (safety check)
+  permanent?: boolean;  // Default: false (soft delete to trash)
 }
 ```
 
@@ -411,18 +412,65 @@ obsidian-http-mcp/
 ```typescript
 {
   success: boolean;
-  deleted_path: string;
+  original_path?: string;      // If soft delete
+  trash_location?: string;     // If soft delete: .trash-http-mcp/{timestamp}_{filename}
+  deleted_path?: string;       // If permanent delete
   message: string;
 }
 ```
 
-**Obsidian API Call**: `DELETE /vault/{path}`
+**Obsidian API Calls**:
+- Soft delete (default): `GET` source → `PUT` trash → `DELETE` source
+- Hard delete: `DELETE /vault/{path}`
 
-**Safety**: Requires `confirm: true` to prevent accidental deletions
+**Safety**:
+- Requires `confirm: true` to prevent accidental deletions
+- Soft delete by default protects against AI operation accidents
+- Trash format: `.trash-http-mcp/{ISO8601-timestamp}_{filename}`
 
 ---
 
-#### 8. `find_files`
+#### 8. `delete_folder`
+
+**Description**: Delete all files in a folder recursively. Soft delete by default (moves to trash). Empty folders remain due to API limitation.
+
+**Input**:
+
+```typescript
+{
+  path: string;         // Required - Folder path
+  confirm?: boolean;    // Required: must be true (safety check)
+  permanent?: boolean;  // Default: false (soft delete to trash)
+}
+```
+
+**Output**:
+
+```typescript
+{
+  success: boolean;
+  moved_files?: number;         // If soft delete
+  trash_location?: string;      // If soft delete: .trash-http-mcp/{timestamp}/
+  deleted_files?: number;       // If permanent delete
+  message: string;
+}
+```
+
+**Obsidian API Calls**: Multiple `GET` + `PUT` (soft) or `DELETE` (hard) per file
+
+**Implementation**:
+
+1. Recursive scan with `walkVault()`
+2. For each file: Read → Write to trash → Delete (soft) or Delete directly (hard)
+3. Preserve folder structure in trash: `.trash-http-mcp/{timestamp}/{original/path/file.md}`
+
+**Limitations**:
+- Empty folders remain (Obsidian REST API has no folder deletion endpoint)
+- Trash format: `.trash-http-mcp/{ISO8601-timestamp}/{folder}/`
+
+---
+
+#### 9. `find_files`
 
 **Description**: Search files by name with fuzzy matching
 
