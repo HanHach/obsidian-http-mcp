@@ -42,21 +42,14 @@ obsidian-http-mcp --api-key YOUR_API_KEY --port 3000
 
 3. **Connect Claude Code CLI**:
 ```bash
-# Add to ~/.claude.json
-{
-  "mcpServers": {
-    "obsidian": {
-      "type": "http",
-      "url": "http://localhost:3000/mcp"
-    }
-  }
-}
+# Add HTTP MCP server
+claude mcp add --transport http obsidian http://localhost:3000/mcp
 ```
 
 4. **Test it**:
 ```bash
 claude mcp list
-# Should show: ✓ obsidian (connected)
+# Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
 ```
 
 ## 🛠️ Features
@@ -129,13 +122,15 @@ obsidian-http-mcp
 │  Claude Code    │
 │      CLI        │
 └────────┬────────┘
-         │ HTTP (no stdio!)
+         │ HTTP (StreamableHTTP - MCP 2025-03-26)
          ↓
-┌─────────────────┐
-│  Obsidian HTTP  │
-│   MCP Server    │ (This project)
-│   Port 3000     │
-└────────┬────────┘
+┌──────────────────────────────┐
+│  Obsidian HTTP MCP Server    │ (This project)
+│                              │
+│  Express + MCP SDK           │
+│  StreamableHTTPServerTransport│
+│  Port 3000                   │
+└────────┬─────────────────────┘
          │ REST API
          ↓
 ┌─────────────────┐

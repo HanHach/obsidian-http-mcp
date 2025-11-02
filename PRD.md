@@ -172,9 +172,10 @@ User → npm install -g obsidian-http-mcp
 
 - **Language**: TypeScript (type safety + maintainability)
 - **Runtime**: Node.js (compatibility with npm ecosystem)
-- **HTTP Server**: Hono (lightweight, fast)
-- **MCP SDK**: @modelcontextprotocol/sdk (official)
+- **HTTP Server**: Express (MCP SDK compatible)
+- **MCP SDK**: @modelcontextprotocol/sdk v1.20.2 (official, StreamableHTTPServerTransport)
 - **HTTP Client**: axios (Obsidian REST API calls)
+- **Protocol**: Streamable HTTP (MCP spec 2025-03-26)
 
 ### Project Structure
 

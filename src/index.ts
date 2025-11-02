@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import { serve } from '@hono/node-server';
 import { loadConfig } from './utils/config.js';
 import { ObsidianClient } from './client/obsidian.js';
 import { createHttpServer } from './server/http.js';
@@ -63,9 +62,8 @@ Add to ~/.claude.json:
 Server is ready!
   `);
 
-  serve({
-    fetch: app.fetch,
-    port: config.port,
+  app.listen(config.port, () => {
+    console.log(`\n✓ Server listening on port ${config.port}\n`);
   });
 }
 

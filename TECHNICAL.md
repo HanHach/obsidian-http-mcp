@@ -23,9 +23,16 @@
 │    Obsidian HTTP MCP Server          │
 │                                       │
 │  ┌────────────────────────────────┐  │
-│  │  HTTP Server (Hono)            │  │
+│  │  Express HTTP Server           │  │
 │  │  - Port: 3000 (configurable)   │  │
 │  │  - Routes: /mcp, /health       │  │
+│  └────────┬───────────────────────┘  │
+│           │                           │
+│  ┌────────▼───────────────────────┐  │
+│  │  MCP SDK Server                │  │
+│  │  StreamableHTTPServerTransport │  │
+│  │  - Auto-discovery              │  │
+│  │  - Protocol: 2025-03-26        │  │
 │  └────────┬───────────────────────┘  │
 │           │                           │
 │  ┌────────▼───────────────────────┐  │
@@ -124,8 +131,8 @@ obsidian-http-mcp/
 
 | Package | Version | Purpose |
 |---------|---------|---------|
-| `hono` | ^4.10.4 | Lightweight HTTP server |
-| `@modelcontextprotocol/sdk` | ^1.20.2 | Official MCP SDK |
+| `express` | ^4.21.2 | HTTP server (MCP SDK compatible) |
+| `@modelcontextprotocol/sdk` | ^1.20.2 | Official MCP SDK with StreamableHTTPServerTransport |
 | `axios` | ^1.13.1 | HTTP client for Obsidian API |
 | `dotenv` | ^17.2.3 | Environment variable loading |
 
@@ -135,6 +142,7 @@ obsidian-http-mcp/
 |---------|---------|---------|
 | `typescript` | ^5.9.3 | Type checking |
 | `@types/node` | ^24.9.2 | Node.js types |
+| `@types/express` | ^5.0.0 | Express types |
 | `tsx` | ^4.20.6 | TypeScript execution |
 
 ### Runtime Requirements
@@ -142,6 +150,12 @@ obsidian-http-mcp/
 - **Node.js**: 18.0.0 or higher
 - **npm**: 9.0.0 or higher
 - **OS**: Linux, macOS, Windows (WSL2)
+
+### MCP Protocol
+
+- **Spec Version**: 2025-03-26 (Streamable HTTP)
+- **Transport**: `StreamableHTTPServerTransport`
+- **Endpoint**: POST `/mcp` (single endpoint for all operations)
 
 ---
 

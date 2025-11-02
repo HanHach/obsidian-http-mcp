@@ -17,7 +17,7 @@ src/
 │   └── obsidian.ts       # Wrapper axios pour Obsidian REST API (port 27123)
 │
 ├── server/
-│   └── http.ts           # Serveur Hono + endpoint /mcp (MCP protocol)
+│   └── http.ts           # Express + MCP SDK StreamableHTTPServerTransport
 │
 └── tools/
     ├── list.ts           # list_dir + list_files
@@ -31,13 +31,13 @@ src/
 ## Flow d'exécution
 
 ```
-1. User: claude mcp connect
+1. User: claude mcp list (auto-discovery)
 2. Claude CLI → POST http://localhost:3000/mcp
-3. server/http.ts reçoit request MCP
-4. Route vers tools/{tool}.ts
+3. Express server → StreamableHTTPServerTransport
+4. MCP SDK Server → tools/{tool}.ts (via registered handlers)
 5. tools/{tool}.ts appelle client/obsidian.ts
 6. client/obsidian.ts → Obsidian REST API (127.0.0.1:27123)
-7. Response → tools → server → Claude CLI
+7. Response → tools → MCP SDK → Transport → Claude CLI
 ```
 
 ## Responsabilités par fichier
@@ -78,10 +78,12 @@ export interface ToolResult {
 - Error handling (404, 401, etc)
 
 ### `server/http.ts`
-- Hono app
-- POST /mcp → MCP protocol handler
+- Express app
+- MCP SDK Server instance
+- StreamableHTTPServerTransport
+- POST /mcp → handleRequest() via transport
 - GET /health → { status: "ok" }
-- Route requests vers tools
+- Register tools via server.setRequestHandler()
 
 ### `tools/*.ts`
 Chaque tool:
@@ -102,14 +104,16 @@ Chaque tool:
 
 ## Dépendances critiques
 
-- `hono` → server/http.ts
-- `@modelcontextprotocol/sdk` → server/http.ts (MCP protocol)
+- `express` → server/http.ts (HTTP server)
+- `@modelcontextprotocol/sdk` → server/http.ts (StreamableHTTPServerTransport)
 - `axios` → client/obsidian.ts
 - `dotenv` → utils/config.ts
 
 ## Notes importantes
 
-- **Pas de stdio** - Tout HTTP pur
+- **Pas de stdio** - Tout HTTP pur (StreamableHTTP MCP 2025-03-26)
 - **Port par défaut**: 3000 (configurable)
 - **Obsidian API**: Toujours 127.0.0.1:27123 (local only)
 - **Sécurité**: API key validée dans client/obsidian.ts
+- **Auto-discovery**: Claude CLI détecte automatiquement via MCP SDK
+- **Transport**: Une instance StreamableHTTPServerTransport par requête (évite collisions ID)
