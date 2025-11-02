@@ -152,7 +152,7 @@ export function createHttpServer(client: ObsidianClient, port: number) {
         },
         {
           name: 'delete_file',
-          description: 'Delete a file (requires confirm: true)',
+          description: 'Delete a file. By default moves to .trash-http-mcp/ for recovery. Set permanent=true for irreversible deletion.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -163,6 +163,10 @@ export function createHttpServer(client: ObsidianClient, port: number) {
               confirm: {
                 type: 'boolean',
                 description: 'Confirm deletion (required: must be true)'
+              },
+              permanent: {
+                type: 'boolean',
+                description: 'If true, permanently delete (irreversible). Default: false (moves to .trash-http-mcp/)'
               },
             },
             required: ['path', 'confirm'],

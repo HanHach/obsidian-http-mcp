@@ -140,6 +140,10 @@ Result: Success
 - **60s cache**: Reduces API calls by 70% in typical sessions
 - **Parallel scanning**: Fast recursive walk using Promise.all
 
+### Safe File Deletion
+
+Files are **soft deleted by default** - moved to `.trash-http-mcp/` folder instead of permanent deletion. This protects against accidental data loss from AI operations. To restore deleted files, open the `.trash-http-mcp/` folder in Obsidian and move files back manually. For irreversible deletion, set `permanent: true`.
+
 ### Why HTTP Native?
 
 **Traditional MCP servers (stdio)**:

@@ -4,7 +4,7 @@ import { invalidateFilesCache } from './find.js';
 
 export async function deleteFile(
   client: ObsidianClient,
-  args: { path: string; confirm?: boolean }
+  args: { path: string; confirm?: boolean; permanent?: boolean }
 ): Promise<ToolResult> {
   try {
     if (!args.path) {
@@ -29,18 +29,39 @@ export async function deleteFile(
       };
     }
 
-    await client.deleteFile(args.path);
+    if (args.permanent) {
+      // Hard delete (irreversible)
+      await client.deleteFile(args.path);
+      invalidateFilesCache();
 
-    // Invalidate cache so deleted file is immediately removed from search results
-    invalidateFilesCache();
+      return {
+        success: true,
+        data: {
+          deleted_path: args.path,
+          message: 'File permanently deleted (irreversible)',
+        },
+      };
+    } else {
+      // Soft delete: move to .trash-http-mcp/ (default, recoverable)
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = args.path.split('/').pop() || args.path;
+      const trashPath = `.trash-http-mcp/${timestamp}_${filename}`;
 
-    return {
-      success: true,
-      data: {
-        deleted_path: args.path,
-        message: 'File deleted successfully',
-      },
-    };
+      const content = await client.readFile(args.path);
+      await client.writeFile(trashPath, content);
+      await client.deleteFile(args.path);
+
+      invalidateFilesCache();
+
+      return {
+        success: true,
+        data: {
+          original_path: args.path,
+          trash_location: trashPath,
+          message: 'File moved to .trash-http-mcp/ (open in Obsidian to restore)',
+        },
+      };
+    }
   } catch (error) {
     return {
       success: false,
