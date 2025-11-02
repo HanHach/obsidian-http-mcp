@@ -1,7 +1,6 @@
-# Technical Specification
-# Obsidian HTTP MCP Server
+# Technical Specification: Obsidian HTTP MCP Server
 
-**Version**: 1.0
+**Version**: 1.0  
 **Last Updated**: 2025-11-02
 
 ---
@@ -10,7 +9,7 @@
 
 ### System Design
 
-```
+```text
 ┌──────────────────────────────────────┐
 │         MCP Clients                  │
 │  (Claude Code CLI, Codex, Gemini)    │
@@ -57,7 +56,7 @@
 │  │  Obsidian REST API Client      │  │
 │  │  - HTTP client (axios)         │  │
 │  │  - Auth: Bearer token          │  │
-│  │  - Base URL: 127.0.0.1:27123   │  │
+│  │  - Base URL: Configurable      │  │
 │  └────────┬───────────────────────┘  │
 └───────────┼───────────────────────────┘
             │
@@ -81,7 +80,7 @@
 
 ## 📁 Project Structure
 
-```
+```text
 obsidian-http-mcp/
 ├── src/
 │   ├── index.ts              # Main entry point
@@ -149,7 +148,12 @@ obsidian-http-mcp/
 
 - **Node.js**: 18.0.0 or higher
 - **npm**: 9.0.0 or higher
-- **OS**: Linux, macOS, Windows (WSL2)
+- **OS**: Linux, macOS, Windows (native or WSL2)
+
+### Network Configuration
+
+- **Server Listen**: `0.0.0.0:3000` (all interfaces, cross-platform accessible)
+- **Obsidian API**: Configurable via `OBSIDIAN_BASE_URL` (depends on deployment, see [CONFIGURATION.md](./CONFIGURATION.md))
 
 ### MCP Protocol
 
@@ -166,6 +170,7 @@ obsidian-http-mcp/
 **Endpoint**: `POST /mcp`
 
 **Request Format**:
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -181,6 +186,7 @@ obsidian-http-mcp/
 ```
 
 **Response Format**:
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -210,6 +216,7 @@ obsidian-http-mcp/
 **Description**: List subdirectories in a path
 
 **Input**:
+
 ```typescript
 {
   path?: string;  // Directory path WITH trailing slash (e.g., "BUSINESS/" or "")
@@ -217,6 +224,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   directories: string[];  // Array of directory names
@@ -232,6 +240,7 @@ obsidian-http-mcp/
 **Description**: List files in a directory
 
 **Input**:
+
 ```typescript
 {
   path?: string;        // Directory path WITH trailing slash (e.g., "Notes/" or "")
@@ -240,6 +249,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   files: Array<{
@@ -260,6 +270,7 @@ obsidian-http-mcp/
 **Description**: Read content of a file
 
 **Input**:
+
 ```typescript
 {
   path: string;  // File path WITHOUT trailing slash (e.g., "Notes/meeting.md")
@@ -267,6 +278,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   content: string;      // Markdown content
@@ -284,6 +296,7 @@ obsidian-http-mcp/
 **Description**: Create or update a file
 
 **Input**:
+
 ```typescript
 {
   path: string;              // Required
@@ -293,6 +306,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -313,6 +327,7 @@ obsidian-http-mcp/
 **Description**: Search for text across all files
 
 **Input**:
+
 ```typescript
 {
   query: string;               // Required
@@ -323,6 +338,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   matches: Array<{
@@ -337,6 +353,7 @@ obsidian-http-mcp/
 ```
 
 **Implementation**:
+
 1. List all files
 2. Read each file
 3. Perform regex/text search
@@ -349,6 +366,7 @@ obsidian-http-mcp/
 **Description**: Move or rename a file
 
 **Input**:
+
 ```typescript
 {
   source: string;      // Required
@@ -358,6 +376,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -379,6 +398,7 @@ obsidian-http-mcp/
 **Description**: Delete a file
 
 **Input**:
+
 ```typescript
 {
   path: string;        // Required
@@ -387,6 +407,7 @@ obsidian-http-mcp/
 ```
 
 **Output**:
+
 ```typescript
 {
   success: boolean;
@@ -508,27 +529,14 @@ CMD ["node", "dist/index.js"]
 DEBUG=obsidian-http-mcp:* obsidian-http-mcp
 ```
 
-### Common Issues
-
-1. **"Connection refused"**
-   - Check Obsidian REST API is running
-   - Verify port 27123 is open
-
-2. **"Unauthorized"**
-   - Check API key is correct
-   - Verify API key format (no extra spaces)
-
-3. **"File not found"**
-   - Check path uses forward slashes
-   - Verify file exists in vault
-
 ---
 
 ## 📚 References
 
 - [MCP Specification](https://modelcontextprotocol.io/specification)
+- [MCP SDK Documentation](https://github.com/modelcontextprotocol/sdk)
 - [Obsidian Local REST API Docs](https://github.com/coddingtonbear/obsidian-local-rest-api)
-- [Hono Documentation](https://hono.dev/)
+- [Express Documentation](https://expressjs.com/)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 
 ---
