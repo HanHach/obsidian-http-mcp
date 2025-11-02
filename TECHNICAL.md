@@ -521,13 +521,42 @@ CMD ["node", "dist/index.js"]
 
 ---
 
-## 🐛 Debugging
+## 🐛 Development Commands
 
-### Enable Debug Logs
+### Available Scripts
 
 ```bash
-DEBUG=obsidian-http-mcp:* obsidian-http-mcp
+# Development mode (auto-reload on changes)
+npm run dev
+
+# Build TypeScript to JavaScript
+npm run build
+
+# Production mode (requires build first)
+npm start
 ```
+
+### Common Issues
+
+**"Connection refused"**:
+
+```bash
+# Check if Obsidian REST API is running
+curl http://127.0.0.1:27123/
+
+# Check server is running
+curl http://localhost:3000/health
+```
+
+**"Module not found"**:
+
+```bash
+# Reinstall dependencies (especially after git pull or platform change)
+rm -rf node_modules
+npm install
+```
+
+See [CONFIGURATION.md](./CONFIGURATION.md) for cross-platform troubleshooting (Windows/WSL2).
 
 ---
 
