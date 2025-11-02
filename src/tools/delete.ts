@@ -2,23 +2,30 @@ import type { ObsidianClient } from '../client/obsidian.js';
 import type { ToolResult } from '../types/index.js';
 import { invalidateFilesCache, walkVault } from './find.js';
 
+function validateDeleteArgs(
+  args: { path?: string; confirm?: boolean },
+  operation: 'file' | 'folder'
+): { valid: boolean; error?: string } {
+  if (!args.path) {
+    return { valid: false, error: 'path parameter is required' };
+  }
+  if (!args.confirm) {
+    return {
+      valid: false,
+      error: `confirm=true is required to delete a ${operation} (safety check)`,
+    };
+  }
+  return { valid: true };
+}
+
 export async function deleteFile(
   client: ObsidianClient,
   args: { path: string; confirm?: boolean; permanent?: boolean }
 ): Promise<ToolResult> {
   try {
-    if (!args.path) {
-      return {
-        success: false,
-        error: 'path parameter is required',
-      };
-    }
-
-    if (!args.confirm) {
-      return {
-        success: false,
-        error: 'confirm=true is required to delete a file (safety check)',
-      };
+    const validation = validateDeleteArgs(args, 'file');
+    if (!validation.valid) {
+      return { success: false, error: validation.error! };
     }
 
     const exists = await client.fileExists(args.path);
@@ -30,7 +37,7 @@ export async function deleteFile(
     }
 
     if (args.permanent) {
-      // Hard delete (irreversible)
+      // Hard delete: permanent removal (cannot be recovered from trash)
       await client.deleteFile(args.path);
       invalidateFilesCache();
 
@@ -42,7 +49,7 @@ export async function deleteFile(
         },
       };
     } else {
-      // Soft delete: move to .trash-http-mcp/ (default, recoverable)
+      // Soft delete (default): preserve user data in trash for manual recovery via Obsidian
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const filename = args.path.split('/').pop() || args.path;
       const trashPath = `.trash-http-mcp/${timestamp}_${filename}`;
@@ -75,18 +82,9 @@ export async function deleteFolder(
   args: { path: string; confirm?: boolean; permanent?: boolean }
 ): Promise<ToolResult> {
   try {
-    if (!args.confirm) {
-      return {
-        success: false,
-        error: 'confirm=true is required to delete a folder (safety check)',
-      };
-    }
-
-    if (!args.path) {
-      return {
-        success: false,
-        error: 'path parameter is required',
-      };
+    const validation = validateDeleteArgs(args, 'folder');
+    if (!validation.valid) {
+      return { success: false, error: validation.error! };
     }
 
     // Get all files recursively
@@ -99,10 +97,10 @@ export async function deleteFolder(
       };
     }
 
-    const timestamp = Date.now();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
     if (args.permanent) {
-      // Hard delete all files
+      // Hard delete: permanently remove all files (cannot be recovered)
       await Promise.all(allFiles.map((f) => client.deleteFile(f)));
       invalidateFilesCache();
 
@@ -114,7 +112,7 @@ export async function deleteFolder(
         },
       };
     } else {
-      // Soft delete: move to .trash-http-mcp/
+      // Soft delete (default): preserve folder structure in trash for easy recovery
       await Promise.all(
         allFiles.map(async (filePath) => {
           const trashPath = `.trash-http-mcp/${timestamp}/${filePath}`;
