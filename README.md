@@ -38,8 +38,10 @@ npm install -g obsidian-http-mcp
 
 1. Open Obsidian → Settings → Community Plugins → Browse
 2. Search "Local REST API" → Install → Enable
-3. Settings → Local REST API → Copy the API key
-4. Verify plugin is running (should show port 27123)
+3. Settings → Local REST API:
+   - **Enable "Non encrypted (HTTP) API"** (required for localhost)
+   - Copy the API key
+   - Verify port 27123 is shown
 
 #### Step 2: Start the server
 
