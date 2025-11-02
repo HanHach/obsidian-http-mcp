@@ -184,6 +184,15 @@ See `obsidian-http-mcp --help` for all options.
 └─────────────────┘
 ```
 
+## 🔧 Advanced Configuration
+
+Running on Windows/WSL2? Multiple configuration options available:
+- All on Windows
+- Server on Windows + CLI on WSL2
+- Server on WSL2 + CLI on WSL2
+
+See [CONFIGURATION.md](./CONFIGURATION.md) for detailed setup instructions and troubleshooting.
+
 ## 🤝 Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md)
