@@ -3,6 +3,7 @@
 This guide covers all supported deployment configurations for Windows/WSL2 environments.
 
 ## Table of Contents
+
 - [Compatibility Matrix](#compatibility-matrix)
 - [Configuration A: All on Windows](#configuration-a-all-on-windows)
 - [Configuration B: Server Windows + CLI WSL2](#configuration-b-server-windows--cli-wsl2-tested)
@@ -28,8 +29,9 @@ This guide covers all supported deployment configurations for Windows/WSL2 envir
 
 **Use Case**: Running everything on Windows (no WSL2 involved).
 
-### Architecture
-```
+### Architecture (Windows Only)
+
+```text
 ┌─────────────────────────┐
 │ Windows                 │
 │                         │
@@ -41,9 +43,10 @@ This guide covers all supported deployment configurations for Windows/WSL2 envir
 └─────────────────────────┘
 ```
 
-### Setup Instructions
+### Setup Instructions (Windows)
 
 #### 1. Configure .env
+
 ```env
 OBSIDIAN_API_KEY=your_api_key_here
 OBSIDIAN_BASE_URL=http://127.0.0.1:27123
@@ -51,17 +54,20 @@ PORT=3000
 ```
 
 #### 2. Start MCP Server (PowerShell)
+
 ```powershell
 npm run dev
 # Should show: Server listening on 0.0.0.0:3000
 ```
 
 #### 3. Add to Claude CLI (PowerShell)
+
 ```powershell
 claude mcp add -s user --transport http obsidian-http http://localhost:3000/mcp
 ```
 
 #### 4. Verify
+
 ```powershell
 # Test MCP server
 curl http://localhost:3000/health
@@ -75,6 +81,7 @@ claude mcp list
 ```
 
 ### Risk Level: ✅ NONE
+
 - All on same machine
 - Direct localhost connections
 - No cross-platform networking needed
@@ -85,8 +92,9 @@ claude mcp list
 
 **Use Case**: Development on WSL2, but server runs on Windows (current tested setup).
 
-### Architecture
-```
+### Architecture (Win Server + WSL CLI)
+
+```text
 ┌──────────────┐         ┌──────────────┐
 │ Windows      │         │ WSL2         │
 │              │         │              │
@@ -98,9 +106,10 @@ claude mcp list
 └──────────────┘         └──────────────┘
 ```
 
-### Setup Instructions
+### Setup Instructions (Win Server + WSL CLI)
 
 #### 1. Configure .env (Windows)
+
 ```env
 OBSIDIAN_API_KEY=your_api_key_here
 OBSIDIAN_BASE_URL=http://127.0.0.1:27123
@@ -110,21 +119,24 @@ PORT=3000
 **Important**: Use `127.0.0.1:27123` because server is on Windows (same as Obsidian).
 
 #### 2. Start MCP Server (Windows PowerShell)
+
 ```powershell
 npm run dev
 # Should show: Server listening on 0.0.0.0:3000 (accessible from WSL2)
 ```
 
 #### 3. Add to Claude CLI (WSL2)
+
 ```bash
 claude mcp add -s user --transport http obsidian-http http://172.19.32.1:3000/mcp
 ```
 
 **Important**: Use `172.19.32.1` from WSL2 to reach Windows services.
 
-#### 4. Verify
+#### 4. Verify (Config B)
 
 **From Windows PowerShell:**
+
 ```powershell
 # Test MCP server locally
 curl http://localhost:3000/health
@@ -134,6 +146,7 @@ curl http://127.0.0.1:27123/
 ```
 
 **From WSL2:**
+
 ```bash
 # Test MCP server cross-platform
 curl http://172.19.32.1:3000/health
@@ -144,6 +157,7 @@ claude mcp list
 ```
 
 ### Risk Level: ⚠️ LOW
+
 - **Risk**: Windows bridge IP (`172.19.32.1`) may change after Windows reboot (rare)
 - **Risk**: Windows Firewall might block port 3000 from WSL2
 - **Mitigation**: Script to detect and update IP if needed
@@ -154,8 +168,9 @@ claude mcp list
 
 **Use Case**: Running MCP server on WSL2 for development workflow.
 
-### Architecture
-```
+### Architecture (WSL Server + WSL CLI)
+
+```text
 ┌──────────────┐         ┌──────────────┐
 │ Windows      │         │ WSL2         │
 │              │         │              │
@@ -167,9 +182,10 @@ claude mcp list
                          └──────────────┘
 ```
 
-### Setup Instructions
+### Setup Instructions (WSL Server + WSL CLI)
 
 #### 1. Configure .env (WSL2)
+
 ```env
 OBSIDIAN_API_KEY=your_api_key_here
 OBSIDIAN_BASE_URL=http://172.19.32.1:27123
@@ -179,21 +195,24 @@ PORT=3000
 **Important**: Use `172.19.32.1:27123` because server is on WSL2 (needs bridge to reach Windows Obsidian).
 
 #### 2. Start MCP Server (WSL2)
+
 ```bash
 npm run dev
 # Should show: Server listening on 0.0.0.0:3000
 ```
 
-#### 3. Add to Claude CLI (WSL2)
+#### 3. Add to Claude CLI (WSL2 - Config C)
+
 ```bash
 claude mcp add -s user --transport http obsidian-http http://localhost:3000/mcp
 ```
 
 **Important**: Use `localhost` because both server and CLI are on WSL2.
 
-#### 4. Verify
+#### 4. Verify (Config C)
 
 **From WSL2:**
+
 ```bash
 # Test MCP server locally
 curl http://localhost:3000/health
@@ -206,7 +225,8 @@ claude mcp list
 # Should show: obsidian-http: http://localhost:3000/mcp (HTTP) - ✓ Connected
 ```
 
-### Risk Level: ⚠️ LOW
+### Risk Level: ⚠️ LOW (Config C)
+
 - **Risk**: Windows bridge IP may change
 - **Risk**: Windows Firewall might block port 27123 from WSL2
 - **Mitigation**: Ensure Windows Firewall allows inbound on port 27123
@@ -218,11 +238,13 @@ claude mcp list
 ### Issue: "Connection refused" from MCP server
 
 **Symptoms**:
-```
+
+```text
 timeout of 10000ms exceeded
 ```
 
 **Diagnosis**:
+
 ```bash
 # Check if Obsidian REST API is accessible
 curl -v http://YOUR_OBSIDIAN_URL:27123/
@@ -232,6 +254,7 @@ curl http://YOUR_MCP_URL:3000/health
 ```
 
 **Solutions**:
+
 1. Verify Obsidian Local REST API plugin is enabled
 2. Verify "Non encrypted (HTTP) API" is enabled in plugin settings
 3. Check `OBSIDIAN_BASE_URL` matches your server location:
@@ -241,12 +264,14 @@ curl http://YOUR_MCP_URL:3000/health
 ### Issue: "No MCP server found" in Claude CLI
 
 **Diagnosis**:
+
 ```bash
 claude mcp list
 # Server shows "Failed to connect"
 ```
 
 **Solutions**:
+
 1. Check MCP client URL matches your CLI location:
    - CLI on Windows, Server on Windows → `http://localhost:3000/mcp`
    - CLI on WSL2, Server on Windows → `http://172.19.32.1:3000/mcp`
@@ -259,6 +284,7 @@ claude mcp list
 **Symptoms**: Works on Windows but not from WSL2.
 
 **Solution (Windows PowerShell as Admin)**:
+
 ```powershell
 # Allow inbound on port 3000 (MCP server)
 New-NetFirewallRule -DisplayName "MCP Server" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
@@ -272,6 +298,7 @@ New-NetFirewallRule -DisplayName "Obsidian REST API" -Direction Inbound -LocalPo
 If `172.19.32.1` doesn't work, find the correct IP:
 
 **From WSL2:**
+
 ```bash
 # Method 1: Check resolv.conf
 cat /etc/resolv.conf | grep nameserver
@@ -283,6 +310,7 @@ ip route | grep default
 ```
 
 **From Windows PowerShell:**
+
 ```powershell
 # Find WSL network adapter
 ipconfig | Select-String -Pattern "WSL" -Context 10
@@ -294,7 +322,7 @@ ipconfig | Select-String -Pattern "WSL" -Context 10
 
 ### Windows/WSL2 Networking Explained
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │ Windows Host (Physical Machine)                     │
 │                                                      │
@@ -327,6 +355,7 @@ ipconfig | Select-String -Pattern "WSL" -Context 10
 ### Why `0.0.0.0` Works
 
 When server binds to `0.0.0.0:3000`:
+
 - Listens on ALL network interfaces
 - Accessible via `127.0.0.1:3000` (localhost)
 - Accessible via `172.19.32.1:3000` (bridge from WSL2)
@@ -339,6 +368,7 @@ This is why the same server code works in all configurations.
 ## Configuration File Templates
 
 ### Windows-only (.env)
+
 ```env
 OBSIDIAN_API_KEY=your_api_key_here
 OBSIDIAN_BASE_URL=http://127.0.0.1:27123
@@ -346,6 +376,7 @@ PORT=3000
 ```
 
 ### Windows Server + WSL2 CLI (.env on Windows)
+
 ```env
 OBSIDIAN_API_KEY=your_api_key_here
 OBSIDIAN_BASE_URL=http://127.0.0.1:27123
@@ -353,6 +384,7 @@ PORT=3000
 ```
 
 ### WSL2 Server + WSL2 CLI (.env on WSL2)
+
 ```env
 OBSIDIAN_API_KEY=your_api_key_here
 OBSIDIAN_BASE_URL=http://172.19.32.1:27123
@@ -365,12 +397,14 @@ PORT=3000
 
 **Where do you want to run the MCP server?**
 
-**→ Windows**
+### Option 1: Windows
+
 - Obsidian is local → Use `OBSIDIAN_BASE_URL=http://127.0.0.1:27123`
 - Claude CLI on Windows → Use `http://localhost:3000/mcp`
 - Claude CLI on WSL2 → Use `http://172.19.32.1:3000/mcp`
 
-**→ WSL2**
+### Option 2: WSL2
+
 - Obsidian on Windows → Use `OBSIDIAN_BASE_URL=http://172.19.32.1:27123`
 - Claude CLI on WSL2 → Use `http://localhost:3000/mcp`
 - Claude CLI on Windows → Not recommended (complex IP routing)

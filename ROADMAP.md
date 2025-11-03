@@ -42,7 +42,8 @@
 
 **Why**: Isolate personal/professional/projects (e.g., one vault on port 27123, another on 27124)
 
-**Config `.env`**:
+**Config `.env`**
+
 ```bash
 # Single vault (default - backward compatible)
 OBSIDIAN_API_KEY=xxx
@@ -62,7 +63,8 @@ PORT=3000
 4. All tools - Add optional `vault` parameter (default to first vault)
 5. `http.ts` - Pass vault to tools
 
-**Usage**:
+### Usage
+
 ```typescript
 // Single vault (no vault param needed)
 read_file({ path: "note.md" })
@@ -247,7 +249,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md)
 
 ---
 
-**Maintained by**: Nas + Claude (AI Assistant)
+**Maintained by**: Community + Claude (AI Assistant)
 **License**: MIT
 **Status**: 🟢 Active Development
 **Philosophy**: MVP-first, community-driven, no overengineering
