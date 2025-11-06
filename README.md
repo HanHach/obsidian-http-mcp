@@ -8,7 +8,7 @@
 
 ## Why This Exists
 
-First HTTP-native MCP server for Obsidian. Solves BrokenPipeError in 150+ stdio-based servers ([Claude Code CLI bug #3071](https://github.com/anthropics/claude-code/issues/3071)).
+First HTTP-native MCP server for Obsidian. Solves stdio transport failures in Claude Code CLI ([#3071](https://github.com/anthropics/claude-code/issues/3071), [#9176](https://github.com/anthropics/claude-code/issues/9176) for mcp-obsidian). HTTP bypasses BrokenPipeError issues entirely.
 
 **Works with**: Claude Code CLI, Claude Desktop, Codex, Gemini | **Performance**: <200ms response, 70% fewer API calls via intelligent cache
 
