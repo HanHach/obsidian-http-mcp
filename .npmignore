@@ -1,0 +1,28 @@
+# Internal documentation (not for npm users)
+OUTREACH_STRATEGY.md
+AGENTS.md
+STRUCTURE.md
+PRD.md
+MULTI_VAULT_DESIGN.md
+CLAUDE.md
+
+# Development files
+.git/
+.github/
+node_modules/
+src/
+tsconfig.json
+.env
+.env.example
+
+# Keep these for users
+!README.md
+!CHANGELOG.md
+!TECHNICAL.md
+!TROUBLESHOOTING.md
+!SECURITY.md
+!ROADMAP.md
+!CONTRIBUTING.md
+!LICENSE
+!package.json
+!dist/

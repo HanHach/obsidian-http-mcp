@@ -1,927 +1,124 @@
-# Technical Specification: Obsidian HTTP MCP Server
+# Technical Specification
 
-**Version**: 1.0.2
-**Last Updated**: 2025-01-06
-
----
-
-## 🏗️ Architecture Overview
-
-### System Design
-
-```text
-┌──────────────────────────────────────┐
-│         MCP Clients                  │
-│  (Claude Code CLI, Codex, Gemini)    │
-└──────────┬───────────────────────────┘
-           │
-           │ HTTP Request (POST /mcp)
-           │ Content-Type: application/json
-           ↓
-┌──────────────────────────────────────┐
-│    Obsidian HTTP MCP Server          │
-│                                       │
-│  ┌────────────────────────────────┐  │
-│  │  Express HTTP Server           │  │
-│  │  - Port: 3000 (configurable)   │  │
-│  │  - Routes: /mcp, /health       │  │
-│  └────────┬───────────────────────┘  │
-│           │                           │
-│  ┌────────▼───────────────────────┐  │
-│  │  MCP SDK Server                │  │
-│  │  StreamableHTTPServerTransport │  │
-│  │  - Auto-discovery              │  │
-│  │  - Protocol: 2025-03-26        │  │
-│  └────────┬───────────────────────┘  │
-│           │                           │
-│  ┌────────▼───────────────────────┐  │
-│  │  MCP Protocol Handler          │  │
-│  │  - tools/list                  │  │
-│  │  - tools/call                  │  │
-│  │  - resources/list (future)     │  │
-│  └────────┬───────────────────────┘  │
-│           │                           │
-│  ┌────────▼───────────────────────┐  │
-│  │  Tool Executor (11 tools)      │  │
-│  │  - list_dir                    │  │
-│  │  - list_files                  │  │
-│  │  - read_file                   │  │
-│  │  - write_file                  │  │
-│  │  - search                      │  │
-│  │  - move_file                   │  │
-│  │  - delete_file/delete_folder   │  │
-│  │  - find_files                  │  │
-│  │  - get_file_info               │  │
-│  │  - create_directory            │  │
-│  └────────┬───────────────────────┘  │
-│           │                           │
-│  ┌────────▼───────────────────────┐  │
-│  │  Obsidian REST API Client      │  │
-│  │  - HTTP client (axios)         │  │
-│  │  - Auth: Bearer token          │  │
-│  │  - Base URL: Configurable      │  │
-│  └────────┬───────────────────────┘  │
-└───────────┼───────────────────────────┘
-            │
-            │ REST API Calls
-            ↓
-┌──────────────────────────────────────┐
-│   Obsidian Local REST API Plugin     │
-│   - Port: 27123 (HTTP)               │
-│   - Port: 27124 (HTTPS)              │
-└──────────┬───────────────────────────┘
-           │
-           │ Direct File Access
-           ↓
-┌──────────────────────────────────────┐
-│        Obsidian Vault                 │
-│        (Markdown Files)               │
-└──────────────────────────────────────┘
-```
+**Version**: 1.0.2 | **Updated**: 2025-01-06
 
 ---
 
-## 📁 Project Structure
+## Stack
 
-```text
-obsidian-http-mcp/
-├── src/
-│   ├── index.ts              # Main entry point
-│   ├── cli.ts                # CLI argument parser
-│   │
-│   ├── client/
-│   │   └── obsidian.ts       # Obsidian REST API client
-│   │
-│   ├── server/
-│   │   └── http.ts           # HTTP server + MCP endpoint
-│   │
-│   ├── tools/
-│   │   ├── list.ts           # list_dir + list_files
-│   │   ├── find.ts           # find_files (cached, fuzzy)
-│   │   ├── read.ts           # read_file
-│   │   ├── write.ts          # write_file
-│   │   ├── search.ts         # search (batched parallel)
-│   │   ├── move.ts           # move_file
-│   │   ├── delete.ts         # delete_file + delete_folder (batched)
-│   │   ├── fileinfo.ts       # get_file_info (metadata)
-│   │   └── directory.ts      # create_directory
-│   │
-│   ├── types/
-│   │   ├── index.ts          # Core types (Config, ToolResult, SearchMatch)
-│   │   ├── search.ts         # Search-specific types (FileMatch, SearchOptions)
-│   │   └── tools.ts          # Tool argument interfaces (11 tools)
-│   │
-│   └── utils/
-│       ├── config.ts         # Configuration loader (with PORT validation)
-│       ├── version.ts        # Version from package.json
-│       ├── search.ts         # Search utilities (fuzzy matching, Levenshtein)
-│       └── batch.ts          # Batch processing utility (concurrency limiting)
-│
-├── dist/                     # Compiled JavaScript (gitignored)
-├── node_modules/             # Dependencies (gitignored)
-│
-├── package.json              # npm configuration
-├── tsconfig.json             # TypeScript configuration
-├── .env.example              # Example environment variables
-├── .gitignore
-│
-├── README.md                 # User documentation
-├── PRD.md                    # Product requirements
-├── ROADMAP.md                # Development roadmap
-├── TECHNICAL.md              # This file
-├── CONTRIBUTING.md           # Contribution guidelines
-└── LICENSE                   # MIT license
-```
+- **Server**: Express 5 + MCP SDK (StreamableHTTPServerTransport)
+- **Client**: axios → Obsidian REST API (port 27123)
+- **Protocol**: MCP 2025-03-26
+- **Runtime**: Node.js 18+
+
+## 11 MCP Tools
+
+| Tool | Purpose | Performance |
+|------|---------|-------------|
+| `list_dir` | List subdirectories | ~30ms |
+| `list_files` | List files in directory | ~50ms |
+| `find_files` | Fuzzy file search (60s cache) | ~10ms cached |
+| `read_file` | Read file content | ~30ms |
+| `write_file` | Create/update/append file | ~80ms |
+| `search` | Full-text search (regex) | 2-3s (1000 files) |
+| `move_file` | Move/rename file | ~150ms |
+| `delete_file` | Delete file (soft delete) | ~80ms |
+| `delete_folder` | Delete folder recursively | Batched (20 concurrent) |
+| `get_file_info` | File metadata (size, modified) | ~30ms |
+| `create_directory` | Create directory | ~60ms |
+
+**Notes:**
+
+- Soft delete → `.trash-http-mcp/` by default
+- Search: batched parallel (20 concurrent reads)
+- Find: fuzzy matching with Levenshtein distance
 
 ---
 
-## 🔧 Technology Stack
+## Performance Optimizations
 
-### Core Dependencies
+**v1.0 improvements:**
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `express` | ^4.21.2 | HTTP server (MCP SDK compatible) |
-| `@modelcontextprotocol/sdk` | ^1.20.2 | Official MCP SDK with StreamableHTTPServerTransport |
-| `axios` | ^1.13.1 | HTTP client for Obsidian API |
-| `dotenv` | ^17.2.3 | Environment variable loading |
+- Search: 50s → 2-3s (96% faster via batched parallel reads)
+- Fuzzy: 500ms → 50ms (90% faster via filtered subset)
+- Cache: 60s TTL on file listings (70% fewer API calls)
 
-### Dev Dependencies
+**Bottlenecks:**
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `typescript` | ^5.9.3 | Type checking |
-| `@types/node` | ^24.9.2 | Node.js types |
-| `@types/express` | ^5.0.0 | Express types |
-| `tsx` | ^4.20.6 | TypeScript execution |
+- Large vault search: limited by Obsidian API latency (~50ms/file)
+- No indexing (by design for simplicity)
 
-### Runtime Requirements
+## Security
 
-- **Node.js**: 18.0.0 or higher
-- **npm**: 9.0.0 or higher
-- **OS**: Linux, macOS, Windows (native or WSL2)
+**Implemented:**
 
-### Configuration Management (v1.0.2+)
+- ✅ Path traversal protection (URL decoding validation)
+- ✅ ReDoS protection (500 char query limit)
+- ✅ PORT validation (1-65535 range)
+- ✅ Type safety (strict TypeScript, no `as any`)
+- ✅ Request size limit (10MB body-parser)
 
-**Config Priority Chain**:
+**User responsibility** (trusted network design):
 
-1. **CLI arguments** (highest priority): `--api-key`, `--base-url`, `--port`
-2. **Environment variables**: `OBSIDIAN_API_KEY`, `OBSIDIAN_BASE_URL`, `PORT`
-3. **Config file**: `~/.obsidian-mcp/config.json`
-4. **`.env` file** (lowest priority, backward compatibility)
+- Authentication (use reverse proxy)
+- Rate limiting (nginx/cloudflare)
+- HTTPS/TLS (reverse proxy)
+- Firewall rules
 
-**Persistent Config Storage**:
+See [SECURITY.md](./SECURITY.md) for deployment checklist.
 
-- Location: `~/.obsidian-mcp/config.json`
-- Created via: `obsidian-http-mcp --setup` (interactive wizard)
-- Permissions: 0600 (owner read/write only) on Linux/Mac
-- Format:
-  ```json
-  {
-    "apiKey": "your-api-key-here",
-    "baseUrl": "http://127.0.0.1:27123",
-    "port": 3000
-  }
-  ```
+## Configuration (v1.0.2+)
 
-**First-time Setup Workflow**:
+**Priority chain:**
+
+1. CLI args (`--api-key`, `--port`)
+2. Environment variables (`OBSIDIAN_API_KEY`)
+3. Config file (`~/.obsidian-mcp/config.json`)
+4. .env file
+
+**Setup wizard:**
 
 ```bash
 obsidian-http-mcp --setup
-# Enter API key when prompted
-# Accept defaults or customize URL/port
-# Config saved to ~/.obsidian-mcp/config.json
-
-# Then just:
-obsidian-http-mcp
-# No need to type API key again
 ```
 
-**Implementation Details** (v1.0.2):
+Config saved to `~/.obsidian-mcp/config.json` (0600 permissions).
 
-- `src/utils/config.ts`: Config file loading with validation
-- `src/cli.ts`: Interactive setup wizard via readline
-- `src/index.ts`: Setup handler before server start
-- Zero new dependencies (Node.js built-ins only)
-- 150 lines added across 3 files
-
-### Network Configuration
-
-- **Server Listen**: `0.0.0.0:3000` (all interfaces, cross-platform accessible)
-- **Obsidian API**: Configurable via `OBSIDIAN_BASE_URL` (depends on deployment, see [CONFIGURATION.md](./CONFIGURATION.md))
-
-### MCP Protocol
-
-- **Spec Version**: 2025-03-26 (Streamable HTTP)
-- **Transport**: `StreamableHTTPServerTransport`
-- **Endpoint**: POST `/mcp` (single endpoint for all operations)
-
----
-
-## 🔌 API Specifications
-
-### MCP Protocol Implementation
-
-**Endpoint**: `POST /mcp`
-
-**Request Format**:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "1",
-  "method": "tools/call",
-  "params": {
-    "name": "read_file",
-    "arguments": {
-      "path": "Notes/example.md"
-    }
-  }
-}
-```
-
-**Response Format**:
-
-```json
-{
-  "jsonrpc": "2.0",
-  "id": "1",
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "# Example Note\n\nThis is the content..."
-      }
-    ]
-  }
-}
-```
-
-### Tool Specifications
-
-**⚠️ IMPORTANT - Trailing Slash Requirement**:
-
-- **Directories MUST end with `/`**: `BUSINESS/`, `Notes/`, `""` (root)
-- **Files MUST NOT have `/`**: `Notes/meeting.md`, `README.md`
-- This is an Obsidian REST API requirement enforced by the plugin
-
----
-
-#### 1. `list_dir`
-
-**Description**: List subdirectories in a path. IMPORTANT: Paths must end with / for directories (e.g., "BUSINESS/" not "BUSINESS")
-
-**Input**:
-
-```typescript
-{
-  path?: string;  // Directory path WITH trailing slash (e.g., "BUSINESS/" or "")
-}
-```
-
-**Output**:
-
-```typescript
-{
-  directories: string[];  // Array of directory names
-}
-```
-
-**Obsidian API Call**: `GET /vault/{path}/`
-
----
-
-#### 2. `list_files`
-
-**Description**: List files in a directory. IMPORTANT: Directory paths must end with / (e.g., "Notes/" not "Notes")
-
-**Input**:
-
-```typescript
-{
-  path?: string;        // Directory path WITH trailing slash (e.g., "Notes/" or "")
-  extension?: string;   // Optional, filter by extension (e.g., "md")
-}
-```
-
-**Output**:
-
-```typescript
-{
-  files: Array<{
-    name: string;
-    path: string;
-    size: number;
-    modified: string;  // ISO 8601 timestamp
-  }>;
-}
-```
-
-**Obsidian API Call**: `GET /vault/{path}/`
-
----
-
-#### 3. `read_file`
-
-**Description**: Read content of a file. Use file path WITHOUT trailing slash (e.g., "Notes/meeting.md")
-
-**Input**:
-
-```typescript
-{
-  path: string;  // File path WITHOUT trailing slash (e.g., "Notes/meeting.md")
-}
-```
-
-**Output**:
-
-```typescript
-{
-  content: string;      // Markdown content
-  frontmatter?: object; // YAML frontmatter (if present)
-  modified: string;     // ISO 8601 timestamp
-}
-```
-
-**Obsidian API Call**: `GET /vault/{path}`
-
----
-
-#### 4. `write_file`
-
-**Description**: Create or update a file
-
-**Input**:
-
-```typescript
-{
-  path: string;              // Required
-  content: string;           // Required
-  mode: "create" | "overwrite" | "append";  // Default: "create"
-}
-```
-
-**Output**:
-
-```typescript
-{
-  success: boolean;
-  path: string;
-  message: string;
-}
-```
-
-**Obsidian API Calls**:
-
-- Create: `PUT /vault/{path}`
-- Overwrite: `PUT /vault/{path}` (with existing file check)
-- Append: `PATCH /vault/{path}`
-
----
-
-#### 5. `search`
-
-**Description**: Search for text recursively across entire vault (all subdirectories)
-
-**Input**:
-
-```typescript
-{
-  query: string;               // Required
-  case_sensitive?: boolean;    // Default: false
-  regex?: boolean;             // Default: false
-  max_results?: number;        // Default: 100
-}
-```
-
-**Output**:
-
-```typescript
-{
-  matches: Array<{
-    file: string;
-    line: number;
-    content: string;    // Line content with match
-    context_before?: string;
-    context_after?: string;
-  }>;
-  total_matches: number;
-}
-```
-
-**Implementation**:
-
-1. Scan vault recursively with `walkVault()` (no cache - fresh results every call)
-2. Filter markdown files only
-3. Read each file and perform regex/text search
-4. Return matches with context
-
-**Performance Trade-off**:
-
-- **No caching**: Each search does full vault scan (50-100ms per search)
-- **Why**: Guarantees fresh results - files created/modified between searches are always found
-- **Impact**: ~50 API calls per search on 50-folder vault
-- **Alternative**: Could use `getAllFiles()` 60s cache (10-20x faster repeated searches) but risks stale results
-
----
-
-#### 6. `move_file`
-
-**Description**: Move or rename a file
-
-**Input**:
-
-```typescript
-{
-  source: string;      // Required
-  destination: string; // Required
-  overwrite?: boolean; // Default: false
-}
-```
-
-**Output**:
-
-```typescript
-{
-  success: boolean;
-  old_path: string;
-  new_path: string;
-  message: string;
-}
-```
-
-**Obsidian API Calls**:
-
-1. Read source file: `GET /vault/{source}`
-2. Write to destination: `PUT /vault/{destination}`
-3. Delete source: `DELETE /vault/{source}`
-
----
-
-#### 7. `delete_file`
-
-**Description**: Delete a file with soft delete by default. Moves to `.trash-http-mcp/` for recovery unless `permanent: true`.
-
-**Input**:
-
-```typescript
-{
-  path: string;         // Required
-  confirm?: boolean;    // Required: must be true (safety check)
-  permanent?: boolean;  // Default: false (soft delete to trash)
-}
-```
-
-**Output**:
-
-```typescript
-{
-  success: boolean;
-  original_path?: string;      // If soft delete
-  trash_location?: string;     // If soft delete: .trash-http-mcp/{timestamp}_{filename}
-  deleted_path?: string;       // If permanent delete
-  message: string;
-}
-```
-
-**Obsidian API Calls**:
-
-- Soft delete (default): `GET` source → `PUT` trash → `DELETE` source
-- Hard delete: `DELETE /vault/{path}`
-
-**Safety**:
-
-- Requires `confirm: true` to prevent accidental deletions
-- Soft delete by default protects against AI operation accidents
-- Trash format: `.trash-http-mcp/{ISO8601-timestamp}_{filename}`
-
----
-
-#### 8. `delete_folder`
-
-**Description**: Delete all files in a folder recursively. Soft delete by default (moves to trash). Empty folders remain due to API limitation.
-
-**Input**:
-
-```typescript
-{
-  path: string;         // Required - Folder path
-  confirm?: boolean;    // Required: must be true (safety check)
-  permanent?: boolean;  // Default: false (soft delete to trash)
-}
-```
-
-**Output**:
-
-```typescript
-{
-  success: boolean;
-  moved_files?: number;         // If soft delete
-  trash_location?: string;      // If soft delete: .trash-http-mcp/{timestamp}/
-  deleted_files?: number;       // If permanent delete
-  message: string;
-}
-```
-
-**Obsidian API Calls**: Multiple `GET` + `PUT` (soft) or `DELETE` (hard) per file
-
-**Implementation**:
-
-1. Recursive scan with `walkVault()`
-2. For each file: Read → Write to trash → Delete (soft) or Delete directly (hard)
-3. Preserve folder structure in trash: `.trash-http-mcp/{timestamp}/{original/path/file.md}`
-
-**Limitations**:
-
-- Empty folders remain (Obsidian REST API has no folder deletion endpoint)
-- Trash format: `.trash-http-mcp/{ISO8601-timestamp}/{folder}/`
-
----
-
-#### 9. `find_files`
-
-**Description**: Search files by name with fuzzy matching
-
-**Input**:
-
-```typescript
-{
-  query: string;           // Required - Search query
-  fuzzy?: boolean;         // Default: true - Enable typo tolerance
-  max_results?: number;    // Default: 10 - Maximum results
-}
-```
-
-**Output**:
-
-```typescript
-{
-  success: boolean;
-  query: string;
-  total_matches: number;
-  matches: Array<{
-    path: string;          // Full path: "BUSINESS/AI/Note.md"
-    score: number;         // 0-1 similarity score
-    match_type: 'exact' | 'contains' | 'fuzzy';
-  }>;
-}
-```
-
-**Obsidian API Calls**: Multiple `GET /vault/{path}` (recursive scan)
-
-**Algorithm**:
-
-1. Scan vault recursively (cached 60s)
-2. Normalize query (strip emojis, lowercase)
-3. Try exact match first
-4. Try contains match (case-insensitive)
-5. If fuzzy enabled: Levenshtein distance (threshold 0.8)
-6. Sort by score, return top N
-
-**Performance**:
-
-- First call: 50 API calls for 50 folders (200-500ms)
-- Cached calls: 0 API calls (instant)
-- Cache TTL: 60 seconds
-- Parallel folder scanning via Promise.all
-
-**Use Case**: Claude cannot guess exact filenames, especially with emojis or special characters. This tool enables discovery before attempting `read_file`.
-
----
-
-#### 10. `get_file_info`
-
-**Description**: Get file metadata (size, modification date). Returns `exists: false` if file not found. IMPORTANT: Only works for files, not directories.
-
-**Input**:
-
-```typescript
-{
-  path: string;  // Required - File path WITHOUT trailing slash (e.g., "Notes/meeting.md")
-}
-```
-
-**Output**:
-
-```typescript
-{
-  path: string;
-  size: number;           // File size in bytes
-  modified: string;       // ISO 8601 timestamp (empty string if unavailable)
-  exists: boolean;        // false if file not found
-}
-```
-
-**Obsidian API Calls**: `GET /vault/{path}` (reads headers: `Content-Length`, `Last-Modified`)
-
-**Trade-off**:
-
-- GET downloads full file content (Obsidian API doesn't support HEAD requests)
-- Acceptable for markdown files (typically < 100KB)
-- Use with caution on large files (images, PDFs)
-
-**Validation**:
-
-- Rejects paths with trailing slash (returns error directing user to `list_dir`)
-- Returns `exists: false` instead of error if file not found
-
-**Use Case**: Check file metadata before expensive operations, verify file existence without reading content.
-
----
-
-#### 11. `create_directory`
-
-**Description**: Create a new directory in vault. Idempotent (safe to call if already exists). Does NOT create parent directories automatically.
-
-**Input**:
-
-```typescript
-{
-  path: string;  // Required - Directory path WITHOUT trailing slash (e.g., "BUSINESS/AI" not "BUSINESS/AI/")
-}
-```
-
-**Output**:
-
-```typescript
-{
-  path: string;
-  created: boolean;       // false if directory already existed
-  message: string;        // Human-readable status message
-}
-```
-
-**Obsidian API Calls**:
-
-1. Check existence: `GET /vault/{path}/`
-2. Create if missing: `PUT /vault/{path}/` (empty content)
-
-**Behavior**:
-
-- **Idempotent**: Returns `created: false` if directory already exists (not an error)
-- **No recursive creation**: If parent directories missing, operation fails with error
-- **Validation**: Rejects paths with trailing slash in user input (server adds it internally)
-
-**Error Handling**:
-
-- Auth/server errors (401, 500) propagate correctly (not masked as "not found")
-- Only 404 errors treated as "directory doesn't exist"
-
-**Limitations**:
-
-- MVP design: No automatic parent creation (user must create recursively)
-- Prevents accidental deep folder structures
-
-**Use Case**: Organize vault structure, create project folders before adding notes.
-
----
-
-## 🔐 Security Considerations
-
-### API Key Handling
-
-1. **Storage**: Never commit API keys to git
-2. **Loading**: Environment variables or `.env` file
-3. **Validation**: Check API key format on startup
-4. **Transmission**: HTTPS only for remote connections
-
-### Input Validation (v1.0 Hardened)
-
-- **Path Traversal**: URL decoding + validation in `ObsidianClient.validatePath()`
-  - Blocks `..`, `%2e%2e`, absolute paths (`/`), double slashes (`//`)
-  - Implemented: 2025-11-04 (security audit fix)
-- **ReDoS Protection**: Query length limit 500 chars (prevents malicious regex patterns)
-  - Implemented in `tools/search.ts` (2025-11-04)
-- **Regex Injection**: Try/catch on RegExp construction
-- **File Size**: Limit read/write to 10MB via Express `body-parser`
-- **PORT Validation**: Enforce valid range 1-65535 (implemented in `utils/config.ts`)
-
-### Error Handling
-
-- **Never expose vault paths** in error messages
-- **Sanitize error responses** to MCP clients
-- **Log security events** (failed auth, suspicious paths)
-- **Type Safety**: All tool arguments validated via TypeScript interfaces (no `as any` casts)
-
-### Deployment Security
-
-**Scope**: Designed for **trusted network environments** (localhost, LAN, VPN)
-
-**Known Limitations**:
-
-- No built-in authentication (expects reverse proxy)
-- No rate limiting (expects nginx/cloudflare)
-- Binds to `0.0.0.0` by default (required for WSL2 ↔ Windows)
-
-**Production Requirements**:
-
-- Reverse proxy with authentication (bearer token/OAuth)
-- HTTPS/TLS termination
-- Rate limiting configuration
-- Network isolation (VPC/firewall)
-
-See [SECURITY.md](./SECURITY.md) for full deployment checklist.
-
----
-
-## ⚡ Performance Targets
-
-### Response Times (v1.0 Optimized)
-
-| Operation | Target | Actual (v1.0) | Notes |
-|-----------|--------|---------------|-------|
-| list_dir | < 50ms | ~30ms | Single API call |
-| list_files | < 100ms | ~50ms | Single API call |
-| read_file | < 50ms | ~30ms | Single API call |
-| write_file | < 100ms | ~80ms | Single API call |
-| search | < 500ms | **2-3s (1000 files)** | Batched parallel reads (20 concurrent) |
-| move_file | < 200ms | ~150ms | 3 API calls (read/write/delete) |
-| delete_file | < 100ms | ~80ms | Soft delete (3 calls) or hard delete (1 call) |
-| delete_folder | N/A | **Batched (20 concurrent)** | Prevents API throttling |
-| find_files | < 100ms | ~10ms (cached) | 60s cache, fuzzy optimized |
-| get_file_info | < 50ms | ~30ms | GET headers (downloads content) |
-| create_directory | < 100ms | ~60ms | Check existence + PUT |
-
-### Performance Optimizations (v1.0)
-
-**Implemented 2025-11-04**:
-
-1. **Batched Parallel Search** (`src/tools/search.ts`)
-   - Before: Sequential reads (50s for 1000 files)
-   - After: 20 concurrent batches (2-3s for 1000 files)
-   - Gain: **96% faster**
-
-2. **Optimized Fuzzy Matching** (`src/utils/search.ts`)
-   - Before: Levenshtein on all 10k files (500ms)
-   - After: Filter with contains first, fuzzy on subset (50ms)
-   - Gain: **90% faster**
-
-3. **Batch Processing Utility** (`src/utils/batch.ts`)
-   - Delete operations limited to 20 concurrent
-   - Prevents Obsidian REST API throttling
-   - Uses `Promise.allSettled` for error resilience
-
-4. **File Cache** (`src/tools/find.ts`)
-   - 60s TTL for vault file list
-   - Invalidated on mutations (write/move/delete)
-   - Reduces repeated API calls from N to 0
-
-### Scalability (Tested)
-
-- **Small vault** (< 1000 files): All ops < 100ms
-- **Medium vault** (1000-5000 files): Search 2-10s (batched)
-- **Large vault** (5000+ files): Search 10-30s (batched)
-
-**Bottlenecks** (v1.0):
-
-- Search still CPU-bound (sequential file reads within batches)
-- Large vault search limited by Obsidian API latency (~50ms per file)
-
-**Future optimization** (v2.1):
-
-- WebSocket streaming for large searches
-- Server-side indexing (optional SQLite cache)
-- Parallel batch processing across multiple workers
-
----
-
-## 🧪 Testing Strategy
-
-### Unit Tests
-
-- Each tool function isolated
-- Mock Obsidian API responses
-- Edge cases (empty vault, special chars, large files)
-
-### Integration Tests
-
-- Full MCP request/response cycle
-- Real Obsidian REST API (test vault)
-- Error scenarios (network, auth, not found)
-
-### Manual Testing
-
-- Claude Code CLI integration
-- Multiple concurrent requests
-- Large file operations
-- Search performance on big vaults
-
----
-
-## 🚀 Deployment
-
-### npm Package
+## Development
 
 ```bash
-npm run build   # Compile TypeScript
-npm publish     # Publish to npm registry
+npm run dev    # Watch mode
+npm run build  # Compile TypeScript
+npm start      # Production mode
 ```
 
-### Global Installation
+**Project structure:**
 
-```bash
-npm install -g obsidian-http-mcp
-obsidian-http-mcp --version
+```text
+src/
+├── server/http.ts          # Express + MCP endpoint
+├── client/obsidian.ts      # Obsidian API client
+├── tools/                  # 11 MCP tools
+├── utils/                  # Config, search, batch processing
+└── types/                  # TypeScript interfaces
 ```
 
-### Docker (Future)
+## Dependencies
 
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY dist ./dist
-CMD ["node", "dist/index.js"]
-```
+**Runtime:**
+- `express` - HTTP server
+- `@modelcontextprotocol/sdk` - Official MCP SDK
+- `axios` - HTTP client
+- `dotenv` - Environment variables
 
----
+**Zero dependencies added in v1.0.2** (Node.js built-ins only).
 
-## 🐛 Development Commands
-
-### Available Scripts
-
-```bash
-# Development mode (auto-reload on changes)
-npm run dev
-
-# Build TypeScript to JavaScript
-npm run build
-
-# Production mode (requires build first)
-npm start
-```
-
-### Common Issues
-
-**"Connection refused"**:
-
-```bash
-# Check if Obsidian REST API is running
-curl http://127.0.0.1:27123/
-
-# Check server is running
-curl http://localhost:3000/health
-```
-
-**"Module not found"**:
-
-```bash
-# Reinstall dependencies (especially after git pull or platform change)
-rm -rf node_modules
-npm install
-```
-
-See [CONFIGURATION.md](./CONFIGURATION.md) for cross-platform troubleshooting (Windows/WSL2).
-
----
-
-## 📚 References
+## References
 
 - [MCP Specification](https://modelcontextprotocol.io/specification)
-- [MCP SDK Documentation](https://github.com/modelcontextprotocol/sdk)
-- [Obsidian Local REST API Docs](https://github.com/coddingtonbear/obsidian-local-rest-api)
-- [Express Documentation](https://expressjs.com/)
-- [TypeScript Handbook](https://www.typescriptlang.org/docs/)
+- [Obsidian REST API](https://github.com/coddingtonbear/obsidian-local-rest-api)
+- [Full tool specs](https://github.com/NasAndNora/obsidian-http-mcp/tree/master/src/tools)
 
 ---
 
-## 📋 Changelog
-
-### v1.0.2 (2025-01-06)
-
-**Added**:
-
-- Persistent config storage in `~/.obsidian-mcp/config.json` (0600 permissions)
-- Interactive setup wizard via `--setup` flag
-- Config priority chain: CLI args > env vars > config.json > .env > defaults
-
-**Changed**:
-
-- Improved error messages suggesting `--setup` when config missing
-- Updated CLI help text with config priority documentation
-
-**Development Notes**:
-
-- +150 lines across 3 files (config.ts, cli.ts, index.ts)
-- Zero new dependencies (Node.js built-ins only)
-- Backward compatible with .env files
-- 9/9 tests passing (unit + integration + live MCP)
-
-### v1.0.1 (2025-11-06)
-
-**Added**:
-
-- `get_file_info` tool: File metadata (size, modified timestamp)
-- `create_directory` tool: Create vault directories
-
-**Security Fixes**:
-
-- Fixed path validation in `get_file_info` (reject directory paths)
-- Fixed error handling in `directoryExists()` (only catch 404, propagate 401/500)
-- Fixed timestamp fallback (empty string instead of current time)
-
----
-
-**Maintained by**: Claude (AI Assistant)
-**Last Review**: 2025-01-06
+**Maintained by**: Nas | **License**: MIT
