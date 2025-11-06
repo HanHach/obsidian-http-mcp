@@ -24,13 +24,13 @@ First HTTP-native MCP server for Obsidian. Solves stdio transport failures in Cl
 2. **Node.js 18+** - [Download here](https://nodejs.org/)
 3. **[Claude Code CLI](https://claude.ai/code)**
 
-### 1. Configure Obsidian Plugin
+### STEP 1: Configure Obsidian Plugin
 
 - Settings → Community Plugins → Search "Local REST API" → Enable
 - Enable "Non encrypted (HTTP) API"
 - **Copy the API key** (you'll need it next)
 
-### 2. Install & Setup (one-time)
+### STEP 2: Install & Setup
 
 **Install on the same system as Obsidian:**
 
@@ -46,38 +46,50 @@ obsidian-http-mcp --setup
 
 **Config saved to `~/.obsidian-mcp/config.json`** - you won't need to type this again.
 
-### 3. Start Server
+### STEP 3: Start Server
 
-**On the same system as Obsidian (Windows PowerShell or Linux terminal):**
+**On the same system as Obsidian:**
 
 ```bash
 obsidian-http-mcp
 ```
 
-**⚠️ Keep this terminal running.** Restart after reboot to use the MCP server.
+**⚠️ Keep this terminal running.** After reboot, run `obsidian-http-mcp` again.
 
-### 4. Connect Claude CLI (one-time setup)
+### STEP 4: Connect Claude CLI
 
-**Same machine (all Windows or all Linux):**
-
-```bash
-claude mcp add --transport http obsidian http://localhost:3000/mcp
-```
-
-**Cross-platform (Claude on WSL2, Obsidian on Windows):**
+**Option 1: Same machine** (Claude and Obsidian both on Windows OR both on Linux)
 
 ```bash
-claude mcp add --transport http obsidian http://172.19.32.1:3000/mcp
+claude mcp add -s user --transport http obsidian http://localhost:3000/mcp
 ```
 
-Verify:
+**Option 2: Cross-platform** (Claude on WSL2, Obsidian on Windows)
+
+1. Find Windows IP on **Windows PowerShell**:
+
+```powershell
+ipconfig | findstr "vEthernet"
+```
+
+1. Connect from **WSL2":
+
+```bash
+claude mcp add -s user --transport http obsidian http://YOUR_WINDOWS_IP:3000/mcp
+```
+
+---
+
+**Verify connection:**
 
 ```bash
 claude mcp list
 # Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
 ```
 
-### 5. Use with Claude
+### STEP 5: Use with Claude
+
+Run where **Claude Code** is installed (Windows, Linux, or WSL2):
 
 ```bash
 claude
@@ -122,10 +134,10 @@ Config Priority:
   4. .env file
 ```
 
-**Alternative: Using .env file**:
+**Alternative: Using .env file** (on same system as Obsidian):
 
 1. Create `.env` with `OBSIDIAN_API_KEY=your_key`
-2. Run: `obsidian-http-mcp`
+2. Run: `obsidian-http-mcp` (Windows PowerShell or Linux terminal)
 
 ---
 
@@ -133,33 +145,42 @@ Config Priority:
 
 ### WSL2: Connection refused
 
-**Find your bridge IP:**
+**Find your Windows bridge IP:**
 
-```bash
-cat /etc/resolv.conf | grep nameserver
-# Use the IP shown (usually 172.19.32.1)
+On **Windows PowerShell** (not WSL2):
+
+```powershell
+ipconfig | findstr "IPv4"
+# Look for "vEthernet (WSL)" interface
+# Example output: IPv4 Address. . . . . . . . . . . : 172.19.32.1
 ```
 
-Then reconnect:
+Then reconnect from **WSL2 terminal**:
 
 ```bash
-claude mcp add --transport http obsidian http://YOUR_IP:3000/mcp
+claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp
+# Replace YOUR_IP with the IP from above
 ```
+
+> **Why not `127.0.0.1:27123` directly?** Port 27123 is Obsidian's REST API (custom HTTP protocol). Port 3000 is the MCP Server that translates between MCP protocol (used by Claude) and Obsidian's REST API. They are different protocols - the MCP server acts as a translator/proxy.
 
 ### Windows Firewall blocks WSL2
 
+Run on **Windows PowerShell as Administrator**:
+
 ```powershell
-# Run as Admin
 New-NetFirewallRule -DisplayName "MCP Server" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
 ```
 
 ### Port already in use
 
+Run on the same system as Obsidian (Windows PowerShell or Linux terminal):
+
 ```bash
 obsidian-http-mcp --api-key YOUR_KEY --port 3001
 ```
 
-**Need more help?** See [CONFIGURATION.md](./CONFIGURATION.md) for detailed cross-platform setup guides and network architecture.
+**Need more help?** See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for detailed troubleshooting and [TECHNICAL.md](./TECHNICAL.md) for network architecture.
 
 ---
 

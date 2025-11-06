@@ -1,6 +1,6 @@
 # Multi-Vault Support Design (v1.1) ( NEED TO BE REVIEWED )
 
-**Status**: Future Feature | **Target**: v1.1.0 | **Current**: v1.0.2
+**Status**: Future Feature | **Target**: v1.1.0 | **Current**: v1.0.6
 
 ---
 

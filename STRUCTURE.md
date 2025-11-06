@@ -114,7 +114,7 @@ Chaque tool:
 6. ✅ index.ts + cli.ts (entry points)
 7. ✅ Testé en local + soft delete + cache
 
-**Prochaine étape**: v1.0.1 Multi-vault Support (voir ROADMAP.md)
+**Prochaine étape**: v1.1 Multi-vault Support (voir ROADMAP.md)
 
 ## Dépendances critiques
 

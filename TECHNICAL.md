@@ -1,6 +1,6 @@
 # Technical Specification
 
-**Version**: 1.0.2 | **Updated**: 2025-01-06
+**Version**: 1.0.6 | **Updated**: 2025-11-06
 
 ---
 

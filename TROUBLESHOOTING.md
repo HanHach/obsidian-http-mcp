@@ -12,20 +12,25 @@ Common issues and solutions for Obsidian HTTP MCP.
 
 **Solution:** Use Windows bridge IP instead of localhost.
 
-```bash
-# Find bridge IP
-cat /etc/resolv.conf | grep nameserver
-# Output: nameserver 172.19.32.1
+**Step 1 - Find Windows bridge IP:**
 
-# Reconnect Claude CLI with bridge IP
-claude mcp add --transport http obsidian http://172.19.32.1:3000/mcp
+On **Windows PowerShell** (not WSL2):
+
+```powershell
+ipconfig | findstr "IPv4"
+# Look for "vEthernet (WSL)" interface
+# Example: IPv4 Address. . . . . . . . . . . : 172.19.32.1
 ```
 
-**For Obsidian on Windows, server on WSL2:**
+**Step 2 - Reconnect Claude CLI from WSL2:**
+
 ```bash
-# In .env or --setup
-OBSIDIAN_BASE_URL=http://172.19.32.1:27123
+claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp
+# Replace YOUR_IP with the IP from Step 1
+# The -s user flag ensures global installation (not project-local)
 ```
+
+> **Important**: The MCP server must run on the same system as Obsidian (Windows in this case), not on WSL2. This is because the server needs to access Obsidian's REST API at `127.0.0.1:27123`, which is only accessible from Windows localhost.
 
 ---
 
@@ -47,19 +52,75 @@ New-NetFirewallRule -DisplayName "Obsidian MCP Server" -Direction Inbound -Local
 **Symptom:** `EADDRINUSE: address already in use :::3000`
 
 **Solution 1 - Change port:**
+
 ```bash
 obsidian-http-mcp --port 3001
 ```
 
 **Solution 2 - Kill process on port 3000:**
+
 ```bash
 # Linux/WSL2
 lsof -ti:3000 | xargs kill -9
 
 # Windows
 netstat -ano | findstr :3000
+```
 taskkill /PID <PID> /F
 ```
+
+---
+
+## Understanding the Architecture
+
+### Why MCP server on Windows (not WSL2)?
+
+```mermaid
+graph TD
+    A[WSL2] -->|http://172.x.x.x:3000| B[Windows MCP Server]
+    B -->|http://127.0.0.1:27123| C[Obsidian REST API]
+    C -->|localhost| D[Obsidian Vault]
+    
+    style A fill:#f9f,stroke:#333
+    style B fill:#bbf,stroke:#333
+    style C fill:#9f9,stroke:#333
+    style D fill:#9f9,stroke:#333
+```
+
+**Key points:**
+- Obsidian REST API only listens on `127.0.0.1:27123` (Windows localhost)
+- If MCP server ran on WSL2, it couldn't access Windows localhost
+- MCP server on Windows can access Obsidian locally
+- Claude Code on WSL2 accesses Windows server via bridge IP
+                  │ Bridge IP (172.19.x.x.x:3000)
+                  ↓
+┌─────────────────────────────────────────────┐
+│              WSL2                           │
+│                                             │
+│  Claude Code CLI                            │
+│    - Connects to http://172.19.x.x.x:3000  │
+└─────────────────────────────────────────────┘
+```
+
+**Key points:**
+- Obsidian REST API only listens on `127.0.0.1:27123` (Windows localhost)
+- If MCP server ran on WSL2, it couldn't access Windows localhost
+- MCP server on Windows can access Obsidian locally
+- Claude Code on WSL2 accesses Windows server via bridge IP
+
+### Why port 3000 (not 27123 directly)?
+
+- **Port 27123** = Obsidian REST API (custom HTTP protocol)
+- **Port 3000** = MCP Server (MCP protocol)
+
+These are **different protocols**. The MCP server acts as a **translator/proxy**:
+
+1. **Input**: MCP protocol requests from Claude Code (port 3000)
+2. **Process**: Translates to Obsidian REST API calls
+3. **Output**: Contacts Obsidian at `127.0.0.1:27123`
+4. **Return**: Formats responses back to MCP protocol
+
+Claude Code cannot talk directly to Obsidian REST API - it needs the MCP server to translate between protocols.
 
 ---
 
@@ -104,12 +165,14 @@ obsidian-http-mcp --api-key your_key_here
 **Symptom:** Claude CLI shows "Connection timed out" or server health check fails.
 
 **Checklist:**
+
 1. Is server running? Check terminal for "Server is ready!"
 2. Test health endpoint: `curl http://localhost:3000/health`
 3. Check firewall rules (Windows)
 4. Verify port not blocked by antivirus
 
 **Restart server after reboot:**
+
 ```bash
 obsidian-http-mcp
 # Keep terminal running
@@ -212,4 +275,4 @@ curl http://127.0.0.1:27123/ \
 
 ---
 
-**Last Updated**: 2025-01-06
+**Last Updated**: 2025-11-06

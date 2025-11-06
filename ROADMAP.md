@@ -38,6 +38,7 @@
 **Status**: Published to npm
 
 **Performance Benchmarks**:
+
 - Search 1000 files: 50s → 2-3s (96% faster)
 - Fuzzy matching 10k files: 500ms → 50ms (90% faster)
 - Delete operations: Protected from API throttling (20 concurrent max)
@@ -62,9 +63,31 @@
 - Fixed error propagation in `directoryExists()` (401/500 now throw correctly)
 - Fixed timestamp fallback (empty string instead of current time)
 
-**Timeline**: 1 day
+---
 
-**Status**: Ready for npm publish
+### v1.0.2 - Persistent Config ✅ COMPLETED (2025-11-06)
+
+**Goal**: Persistent configuration storage
+
+**Features**:
+
+- ✅ Config storage in `~/.obsidian-mcp/config.json`
+- ✅ Interactive setup wizard (`--setup` flag)
+- ✅ Config priority chain (CLI args > env vars > config.json > .env)
+- ✅ Backward compatible with .env
+
+---
+
+### v1.0.3-1.0.6 - NPM Package & Documentation ✅ COMPLETED (2025-11-06)
+
+**Goal**: Fix npm package distribution and improve documentation
+
+**Changes**:
+
+- ✅ v1.0.3: Fixed bin path (dist/cli.js → dist/index.js)
+- ✅ v1.0.4: Added "files" array to package.json
+- ✅ v1.0.5: Improved cross-platform documentation (Windows/WSL2)
+- ✅ v1.0.6: Restored .npmignore for correct distribution
 
 ---
 
@@ -235,7 +258,7 @@ read_file({ vault: "work", path: "meeting.md" })
 
 ## 🚧 Known Limitations
 
-### Current Limitations (v1.0.1)
+### Current Limitations (v1.0.6)
 
 1. **Single vault only** - One Obsidian instance per server (will be fixed in v1.1)
 2. **Text search only** - No semantic/AI-powered search (by design for simplicity)

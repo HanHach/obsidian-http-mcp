@@ -10,22 +10,21 @@ Thank you for your interest in contributing! This guide will help you set up you
 
 ## Development Setup
 
-### 1. Fork & Clone
+### STEP 1: Fork & Clone
 
 ```bash
 # Fork the repository on GitHub first, then:
 git clone https://github.com/YOUR_GITHUB_USERNAME/obsidian-http-mcp.git
-
 cd obsidian-http-mcp
 ```
 
-### 2. Install Dependencies
+### STEP 2: Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 3. Configure Environment
+### STEP 3: Configure Environment
 
 #### Option A (Recommended): Interactive setup
 
@@ -35,18 +34,15 @@ node dist/cli.js --setup
 # Enter your Obsidian API key when prompted
 ```
 
-Config saved to `~/.obsidian-mcp/config.json`.
-
 #### Option B: Using .env file
 
-Create a `.env` file for local development:
+Create `.env` for local development:
 
 ```bash
 cp .env.example .env
-nano .env  # or use your preferred editor
 ```
 
-Your `.env` should contain:
+Same machine:
 
 ```env
 OBSIDIAN_API_KEY=your_actual_api_key_here
@@ -54,40 +50,47 @@ OBSIDIAN_BASE_URL=http://127.0.0.1:27123
 PORT=3000
 ```
 
-### WSL2 Development (Windows Host)
+WSL2 (dev on WSL2, Obsidian on Windows):
 
 ```env
-OBSIDIAN_BASE_URL=http://172.19.32.1:27123
+OBSIDIAN_API_KEY=your_actual_api_key_here
+OBSIDIAN_BASE_URL=http://YOUR_WINDOWS_IP:27123
+PORT=3000
 ```
 
-### Configuration Priority
+Find Windows IP: `ipconfig | findstr "vEthernet"` on Windows PowerShell
 
-CLI arguments > Environment variables > config.json > .env (see README for details)
-
-### 4. Start Development Server
+### STEP 4: Start Development Server
 
 ```bash
 npm run dev
-# Server starts with hot reload on code changes
 ```
 
-The server will run on `http://localhost:3000`.
+Server runs on `http://localhost:3000` with hot reload.
 
-### 5. Connect Claude CLI for Testing
+### STEP 5: Connect Claude CLI for Testing
 
-**Same machine (Windows or Linux):**
+#### Option 1: Same machine
 
 ```bash
-claude mcp add --transport http obsidian-dev http://localhost:3000/mcp
+claude mcp add -s user --transport http obsidian-dev http://localhost:3000/mcp
 ```
 
-**WSL2 → Windows:**
+#### Option 2: Cross-platform (Claude on WSL2, Obsidian on Windows)
+
+1. Find Windows IP on **Windows PowerShell**:
+
+```powershell
+ipconfig | findstr "vEthernet"
+```
+
+1. Connect from **WSL2":
 
 ```bash
-claude mcp add --transport http obsidian-dev http://172.19.32.1:3000/mcp
+claude mcp add -s user --transport http obsidian-dev http://YOUR_WINDOWS_IP:3000/mcp
 ```
 
-Verify connection:
+Verify:
 
 ```bash
 claude mcp list

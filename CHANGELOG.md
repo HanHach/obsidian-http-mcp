@@ -4,6 +4,44 @@ All notable changes to Obsidian HTTP MCP.
 
 ---
 
+## [1.0.6] - 2025-11-06
+
+### Fixed
+
+- Restored .npmignore for correct package distribution
+
+---
+
+## [1.0.5] - 2025-11-06
+
+### Changed
+
+- Improved cross-platform setup documentation (Windows/WSL2)
+- Restructured installation guide with clear step-by-step format
+
+### Fixed
+
+- Corrected Windows IP discovery for WSL2 users (`ipconfig | findstr "vEthernet"`)
+- Added `-s user` flag for global Claude MCP installation
+
+---
+
+## [1.0.4] - 2025-11-06
+
+### Fixed
+
+- Package distribution: Added explicit "files" array to package.json
+
+---
+
+## [1.0.3] - 2025-11-06
+
+### Fixed
+
+- CLI wizard launch: Fixed bin path (dist/cli.js → dist/index.js)
+
+---
+
 ## [1.0.2] - 2025-01-06
 
 ### Added

@@ -1,0 +1,48 @@
+# Development files
+src/
+tests/
+*.test.ts
+*.test.js
+
+# Config files
+tsconfig.json
+.eslintrc*
+.prettierrc*
+.editorconfig
+
+# Deployment
+Dockerfile
+smithery.yaml
+
+# Environment
+.env
+.env.example
+
+# Internal documentation
+AGENTS.md
+SUIVI.md
+OUTREACH_STRATEGY.md
+CLAUDE.md
+PRD.md
+STRUCTURE.md
+MULTI_VAULT_DESIGN.md
+RELEASE.md
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Coverage
+.early.coverage
+coverage/
+
+# Note: dist/ is INCLUDED (not ignored) for npm package
