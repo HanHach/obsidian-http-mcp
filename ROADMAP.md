@@ -1,6 +1,6 @@
 # Obsidian HTTP MCP Server - Roadmap
 
-**Last Updated**: 2025-11-06
+**Last Updated**: 2025-11-08
 
 ---
 
@@ -91,6 +91,135 @@
 
 ---
 
+### v1.0.7 - Tree Tool
+
+**Goal**: Display vault structure as readable tree
+
+**API**:
+```typescript
+tree({ path?: string, max_depth?: number, include_files?: boolean })
+```
+
+**Returns**: ASCII tree visualization
+```
+TECH/
+├── SSH WSL2-Windows Guide.md
+├── Folder1/
+│   └── File.md
+└── Folder2/
+```
+
+**Use case**: Explore vault structure without multiple list_dir calls
+
+**Effort**: ~80 lines, 2 files modified
+
+---
+
+### v1.0.8 - Rename Tool
+
+**Goal**: Unified tool for renaming files and directories
+
+**Why**: Current approach requires `move_file` for both operations, which is unintuitive for AI. Need explicit tool.
+
+**API**:
+```typescript
+rename({
+  path: string,           // File or directory path
+  newName: string,        // New name only (not full path)
+  type: "file" | "directory"  // Explicit type for clarity
+})
+```
+
+**Features**:
+- ✅ Auto-detect if path is file or directory
+- ✅ Validates type parameter matches actual path type
+- ✅ Returns error if mismatch (safety)
+- ✅ Returns new full path on success
+
+**Returns**:
+```json
+{
+  "success": true,
+  "oldPath": "PERSO",
+  "newPath": "Passions-Perso",
+  "type": "directory"
+}
+```
+
+**Examples**:
+```typescript
+// Rename file
+rename({ path: "note.md", newName: "new-note.md", type: "file" })
+
+// Rename directory
+rename({ path: "PERSO", newName: "Passions-Perso", type: "directory" })
+```
+
+**Token impact**: Clearer intent for AI (no confusion about file vs folder)
+
+**Effort**: ~100 lines, 2 files modified
+
+---
+
+### v1.0.9 - Patch File Tool
+
+**Goal**: Surgical file edits via Obsidian PATCH API
+
+**Why**: Current approach requires full file overwrite for small edits (e.g., changing a title). PATCH allows targeted modifications.
+
+**API**:
+```typescript
+patch_file({
+  path: string,
+  operation: "append" | "prepend" | "replace",
+  target_type: "heading" | "block" | "frontmatter",
+  target: string,
+  content: string
+})
+```
+
+**Features**:
+- ✅ Modify specific headings without rewriting entire file
+- ✅ Edit frontmatter fields precisely
+- ✅ Insert content relative to block references
+- ✅ Three operations: append (after), prepend (before), replace
+
+**Examples**:
+```typescript
+// Replace a heading title
+patch_file({
+  path: "note.md",
+  operation: "replace",
+  target_type: "heading",
+  target: "Old Title",
+  content: "🔸[Claude] New Title"
+})
+
+// Set frontmatter field
+patch_file({
+  path: "note.md",
+  operation: "replace",
+  target_type: "frontmatter",
+  target: "status",
+  content: "done"
+})
+
+// Append content below heading
+patch_file({
+  path: "note.md",
+  operation: "append",
+  target_type: "heading",
+  target: "Notes",
+  content: "- New item added"
+})
+```
+
+**Token impact**: ~95% reduction for small edits (example: change title = 100 tokens instead of 5,000 for full file rewrite)
+
+**Effort**: ~100-120 lines, 2 files modified
+
+---
+
 ### v1.1 - Token Optimization Tools 🔥 NEXT PRIORITY
 
 **Goal**: Drastically reduce token usage for file operations
@@ -146,7 +275,48 @@ search({ query: string, path?: string, context_lines?: number, ... })
 
 ---
 
-### v1.2 - Production Hardening & UX Polish
+### v1.2 - Batch Operations
+
+**Goal**: Add batch operations for efficiency
+
+#### Feature: `batch_move` tool
+
+Bulk move multiple files in single API call
+
+**API**:
+```typescript
+batchMove({
+  operations: [
+    { source: "file1.md", destination: "folder/file1.md" },
+    { source: "file2.md", destination: "folder/file2.md" },
+    ...N total...
+  ]
+})
+```
+
+**Returns**: Detailed results + summary
+```json
+{
+  "success": true,
+  "summary": "42/45 moved successfully",
+  "moved": [
+    { source: "file1.md", destination: "folder/file1.md" },
+    ...all moved files...
+  ],
+  "failed": [
+    { source: "bad1.md", error: "Invalid path" },
+    ...errors...
+  ]
+}
+```
+
+**Token impact**: 1 API call + 1 response instead of 45 calls (95% reduction)
+
+**Effort**: ~150 lines, 2 files modified
+
+---
+
+### v1.3 - Production Hardening & UX Polish
 
 **Goal**: Security improvements + community-driven enhancements
 
@@ -305,7 +475,7 @@ read_file({ vault: "work", path: "meeting.md" })
 
 ### Current Limitations (v1.0.6)
 
-1. **Single vault only** - One Obsidian instance per server (will be fixed in v1.1)
+1. **Single vault only** - One Obsidian instance per server (will be fixed in v2.0)
 2. **Text search only** - No semantic/AI-powered search (by design for simplicity)
 3. **No real-time sync** - Client must re-query for updates (HTTP limitation)
 
