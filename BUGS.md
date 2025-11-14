@@ -11,24 +11,24 @@
 **Severity**: 🔴 High - Blocks move_file, delete_file operations
 
 **Symptom**:
-- File with curly apostrophe fails to move: `"🧪Revendeur Automatisé d'Avatars IA...md"` → **Source file not found**
+- File with curly apostrophe fails to move: `"User's Guide.md"` (with curly apostrophe) → **Source file not found**
 - Error occurs even though file exists and is visible in list_files output
 
 **Root Cause**:
-- Apostrophe in filename is U+2019 (RIGHT SINGLE QUOTATION MARK / curly quote) instead of U+0027 (APOSTROPHE)
+- Apostrophe in filename is U+2019 (RIGHT SINGLE QUOTATION MARK / curly quote `'`) instead of U+0027 (APOSTROPHE `'`)
 - Path matching uses strict string comparison, Unicode variant not recognized
 - Likely introduced by: Auto-correct in text editors or OS clipboard normalization
 
 **Example**:
 ```
-Filename (actual):   🧪Revendeur Automatisé d'Avatars IA...md
-Apostrophe codepoint: U+2019 (curly)
-move_file() result:  Error - Source file not found
+Filename (actual):   User's Guide.md  (← curly apostrophe U+2019)
+User provides:       User's Guide.md  (← straight apostrophe U+0027)
+move_file() result:  Error - Source file not found (mismatch)
 ```
 
 **Workaround**:
-- Manually remove or replace the apostrophe in Obsidian
-- Use straight quote (') instead of curly quote (')
+- Manually replace curly apostrophe (`'`) with straight apostrophe (`'`) in Obsidian
+- Rename file to avoid apostrophes entirely
 
 **Fix for v1.2**:
 - Implement Unicode normalization (NFC or NFD) in path validation
@@ -42,8 +42,8 @@ move_file() result:  Error - Source file not found
 **Severity**: 🟡 Medium - Causes copy-paste failures, confuses users
 
 **Symptom**:
-- `list_files()` returns: `"Rappel outils, astuces etc.md"`
-- Actual filename in Obsidian: `"🛠️Rappel outils, astuces etc.md"` (with hammer emoji)
+- `list_files()` returns: `"Tools and Tips Reminder.md"`
+- Actual filename in Obsidian: `"🛠️Tools and Tips Reminder.md"` (with hammer emoji)
 - Users copy-paste filename from API response, but it doesn't match actual file
 - Subsequent move_file fails because provided path has missing emoji
 
@@ -55,8 +55,8 @@ move_file() result:  Error - Source file not found
 **Example**:
 ```json
 {
-  "name": "Rappel outils, astuces etc.md",
-  "actual_filename": "🛠️Rappel outils, astuces etc.md"
+  "name": "Tools and Tips Reminder.md",
+  "actual_filename": "🛠️Tools and Tips Reminder.md"
 }
 ```
 
@@ -78,27 +78,27 @@ move_file() result:  Error - Source file not found
 **Severity**: 🔴 High - Blocks file operations on validly named files
 
 **Symptom**:
-- File: `"employé..md"` (ending with two dots, not a directory reference)
+- File: `"employee..md"` (ending with two dots, not a directory reference)
 - move_file result: **Error - Invalid path: traversal not allowed**
 - Error occurs on SOURCE validation, even though ".." is part of filename, not a path separator
 
 **Root Cause**:
 - Path validator checks for `..` anywhere in path without context
 - Doesn't distinguish between:
-  - Filename content: `employé..md` (valid, user's intention is filename content)
+  - Filename content: `employee..md` (valid, user's intention is filename content)
   - Path traversal: `folder/../../other` (invalid, security risk)
 - Overly strict regex pattern matching
 
 **Example**:
 ```
-Filename:        "employé..md"
-Path parsing:    "employé" + ".." + "md"
+Filename:        "employee..md"
+Path parsing:    "employee" + ".." + "md"
 Validation:      Treats ".." as directory traversal
 Result:          Rejected (but should be allowed as filename content)
 ```
 
 **Workaround**:
-- Rename file to remove double dots: `"employé.md"`
+- Rename file to remove double dots: `"employee.md"`
 - Manually update filename in Obsidian vault
 
 **Fix for v1.2**:
@@ -114,23 +114,23 @@ Result:          Rejected (but should be allowed as filename content)
 **Severity**: 🟡 Medium - Blocks move operations, user must manually fix
 
 **Symptom**:
-- File: ` Perplexity et ses limites.md` (leading space before "P")
+- File: ` AI Model Limitations.md` (leading space before "A")
 - move_file result: **Source file not found**
 - Space character invisible in terminal/JSON output, hard to debug
 - User manually discovers and removes space to fix
 
 **Root Cause**:
 - `list_files` output includes leading space but not visually obvious in console
-- Path matching is strict: " Perplexity..." ≠ "Perplexity..."
+- Path matching is strict: " AI Model..." ≠ "AI Model..."
 - No trimming of filenames during path validation or listing
 - Leading/trailing spaces valid in filesystem but problematic for APIs
 
 **Example**:
 ```
-Actual filename:  " Perplexity et ses limites.md"
-Visible output:   "Perplexity et ses limites.md"
-Path passed:      " Perplexity et ses limites.md" (has space but invisible)
-Matching:         FAILS - cannot find " Perplexity..." in vault
+Actual filename:  " AI Model Limitations.md"
+Visible output:   "AI Model Limitations.md"
+Path passed:      " AI Model Limitations.md" (has space but invisible)
+Matching:         FAILS - cannot find " AI Model..." in vault
 ```
 
 **Workaround**:
@@ -209,11 +209,11 @@ Result:
 
 Create test files in vault:
 ```
-d'Avatars.md              (curly quote apostrophe)
-🛠️test.md                 (nerd font emoji)
-test..md                  (double dot ending)
- leading space.md         (leading space)
-trailing space .md        (trailing space)
+user's-guide.md           (curly apostrophe U+2019)
+🛠️test.md                 (nerd font emoji with variant selector)
+file..md                  (double dot at end)
+ leading-space.md         (space before filename)
+trailing-space .md        (space before extension)
 ```
 
 Run through all file operations:
