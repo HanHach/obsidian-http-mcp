@@ -22,10 +22,10 @@ ipconfig | findstr "IPv4"
 # Example: IPv4 Address. . . . . . . . . . . : 172.19.32.1
 ```
 
-**Step 2 - Reconnect Claude CLI from WSL2:**
+**Step 2 - Reconnect your AI from WSL2:**
 
 ```bash
-claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp
+claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp  # Adapt to your AI
 # Replace YOUR_IP with the IP from Step 1
 # The -s user flag ensures global installation (not project-local)
 ```
@@ -96,7 +96,7 @@ graph TD
 - Obsidian REST API only listens on `127.0.0.1:27123` (Windows localhost)
 - If MCP server ran on WSL2, it couldn't access Windows localhost
 - MCP server on Windows can access Obsidian locally
-- Claude Code on WSL2 accesses Windows server via bridge IP
+- Your AI on WSL2 accesses Windows server via bridge IP
 
 ```text
                   │ Bridge IP (172.19.x.x.x:3000)
@@ -104,7 +104,7 @@ graph TD
 ┌─────────────────────────────────────────────┐
 │              WSL2                           │
 │                                             │
-│  Claude Code CLI                            │
+│  Your AI (e.g., Claude Code)                │
 │    - Connects to [http://172.19.x.x.x:3000](http://172.19.x.x.x:3000)  │
 └─────────────────────────────────────────────┘
 ```
@@ -114,7 +114,7 @@ graph TD
 - Obsidian REST API only listens on `127.0.0.1:27123` (Windows localhost)
 - If MCP server ran on WSL2, it couldn't access Windows localhost
 - MCP server on Windows can access Obsidian locally
-- Claude Code on WSL2 accesses Windows server via bridge IP
+- Your AI on WSL2 accesses Windows server via bridge IP
 
 ### Why port 3000 (not 27123 directly)?
 
@@ -123,12 +123,12 @@ graph TD
 
 These are **different protocols**. The MCP server acts as a **translator/proxy**:
 
-1. **Input**: MCP protocol requests from Claude Code (port 3000)
+1. **Input**: MCP protocol requests from your AI (port 3000)
 2. **Process**: Translates to Obsidian REST API calls
 3. **Output**: Contacts Obsidian at `127.0.0.1:27123`
 4. **Return**: Formats responses back to MCP protocol
 
-Claude Code cannot talk directly to Obsidian REST API - it needs the MCP server to translate between protocols.
+Your AI cannot talk directly to Obsidian REST API - it needs the MCP server to translate between protocols.
 
 ---
 
@@ -170,7 +170,7 @@ obsidian-http-mcp --api-key your_key_here
 
 ### Server not responding
 
-**Symptom:** Claude CLI shows "Connection timed out" or server health check fails.
+**Symptom:** Your AI shows "Connection timed out" or server health check fails.
 
 **Checklist:**
 
@@ -201,39 +201,32 @@ obsidian-http-mcp
 
 ---
 
-## Claude CLI Issues
+## AI Connection Issues
 
 ### MCP server not detected
 
-**Symptom:** `claude mcp list` shows server disconnected or missing.
+**Symptom:** Your AI shows server disconnected or missing.
 
 **Solution:** Re-add MCP server.
 
 ```bash
-# Remove old connection
-claude mcp remove obsidian
+# Remove old connection (example with Claude Code)
+claude mcp remove obsidian  # Adapt to your AI
 
 # Add new connection (adjust URL for your setup)
-claude mcp add --transport http obsidian http://localhost:3000/mcp
-
-# Verify
-claude mcp list
+claude mcp add --transport http obsidian http://localhost:3000/mcp  # Adapt to your AI
 ```
 
 ---
 
-### Tools not showing in Claude
+### Tools not showing in your AI
 
-**Symptom:** Claude doesn't recognize MCP tools (list_files, read_file, etc.).
+**Symptom:** Your AI doesn't recognize MCP tools (list_files, read_file, etc.).
 
-**Solution:** Restart Claude CLI session.
+**Solution:** Restart your AI session.
 
 ```bash
-# Exit Claude
-exit
-
-# Start new session
-claude
+# Exit and restart your AI
 # Tools should now be available
 ```
 

@@ -1,6 +1,8 @@
 # Obsidian HTTP MCP
 
-> **The first and only HTTP-native MCP server for Obsidian that actually works with Claude Code CLI**
+> **The first HTTP-native MCP server for Obsidian that solves Claude Code CLI stdio bugs** ([#3071](https://github.com/anthropics/claude-code/issues/3071), [#9176](https://github.com/anthropics/claude-code/issues/9176))
+
+**Also compatible with**: Claude Desktop, Codex, Gemini, and other MCP clients
 
 [![npm version](https://badge.fury.io/js/obsidian-http-mcp.svg)](https://www.npmjs.com/package/obsidian-http-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -8,9 +10,9 @@
 
 ## Why This Exists
 
-First HTTP-native MCP server for Obsidian. Solves stdio transport failures in Claude Code CLI ([#3071](https://github.com/anthropics/claude-code/issues/3071), [#9176](https://github.com/anthropics/claude-code/issues/9176) for mcp-obsidian). HTTP bypasses BrokenPipeError issues entirely.
+First HTTP-native MCP server for Obsidian. Solves stdio transport failures (BrokenPipeError) affecting Claude Code CLI. HTTP bypasses these issues entirely.
 
-**Works with**: Claude Code CLI, Claude Desktop, Codex, Gemini | **Performance**: <200ms response, 70% fewer API calls via intelligent cache
+**Performance**: <200ms response, 70% fewer API calls via intelligent cache
 
 ---
 
@@ -22,7 +24,7 @@ First HTTP-native MCP server for Obsidian. Solves stdio transport failures in Cl
 
 1. **[Obsidian](https://obsidian.md/)** with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
 2. **Node.js 18+** - [Download here](https://nodejs.org/)
-3. **[Claude Code CLI](https://claude.ai/code)**
+3. **MCP-compatible AI** (e.g., [Claude Code CLI](https://claude.ai/code), Claude Desktop, Codex, etc.)
 
 ### STEP 1: Configure Obsidian Plugin
 
@@ -43,7 +45,7 @@ obsidian-http-mcp --setup
 
 **Config saved to `~/.obsidian-mcp/config.json`** - you won't need to type this again.
 
-> **Cross-platform users:** If Claude runs on WSL2 but Obsidian on Windows, install the server on Windows.
+> **Cross-platform users:** If your AI runs on WSL2 but Obsidian on Windows, install the server on Windows.
 
 ### STEP 3: Start Server
 
@@ -55,15 +57,15 @@ obsidian-http-mcp
 
 **⚠️ Keep this terminal running.** After reboot, run `obsidian-http-mcp` again.
 
-### STEP 4: Connect Claude CLI
+### STEP 4: Connect Your AI
 
-**If Claude runs where the server is installed:**
+**If your AI runs where the server is installed:**
 
 ```bash
-claude mcp add -s user --transport http obsidian http://localhost:3000/mcp
+claude mcp add -s user --transport http obsidian http://localhost:3000/mcp  # Adapt command to your AI
 ```
 
-**If Claude runs elsewhere** (e.g., Claude on WSL2, server on Windows):
+**If your AI runs elsewhere** (e.g., Claude on WSL2, server on Windows):
 
 1. Find server's IP address on **the system where the server runs**:
 
@@ -75,31 +77,24 @@ ipconfig | findstr "vEthernet"
 ip addr show | grep inet
 ```
 
-2. Connect from **where Claude CLI runs**:
+2. Connect from **where your AI runs**:
 
 ```bash
-claude mcp add -s user --transport http obsidian http://SERVER_IP:3000/mcp
+claude mcp add -s user --transport http obsidian http://SERVER_IP:3000/mcp  # Adapt command to your AI
 ```
 
 ---
 
-**Verify connection:**
+### STEP 5: Use with Your AI
+
+Run where your AI is installed (Windows, Linux, or WSL2):
 
 ```bash
-claude mcp list
-# Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
+claude  # Or your AI CLI command
+# Try: "List all folders in my Obsidian vault"
 ```
 
-### STEP 5: Use with Claude
-
-Run where **Claude Code** is installed (Windows, Linux, or WSL2):
-
-```bash
-claude
-# Try: "Show me all notes in my Projects folder"
-```
-
-**That's it!** Claude will automatically connect to the server every time you start a conversation (as long as the server is running).
+**That's it!** Your AI will automatically connect to the server every time you start a conversation (as long as the server is running).
 
 ---
 
@@ -121,9 +116,9 @@ obsidian-http-mcp
 
 ## 🛠️ Features
 
-**11 MCP Tools**: File operations (read/write/move/delete), search, fuzzy find, directory management
+**12 MCP Tools**: File operations (read/write/edit/move/delete), search, fuzzy find, directory management
 
-**Smart File Search**: Fuzzy matching with typo tolerance, emoji support, 60s cache - solves the problem where Claude cannot guess exact filenames
+**Smart File Search**: Fuzzy matching with typo tolerance, emoji support, 60s cache - solves the problem where AI cannot guess exact filenames
 
 **Safe Deletion**: Soft delete to `.trash-http-mcp/` by default (protects against accidental AI operations)
 
@@ -181,7 +176,7 @@ claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp
 # Replace YOUR_IP with the IP from above
 ```
 
-> **Why not `127.0.0.1:27123` directly?** Port 27123 is Obsidian's REST API (custom HTTP protocol). Port 3000 is the MCP Server that translates between MCP protocol (used by Claude) and Obsidian's REST API. They are different protocols - the MCP server acts as a translator/proxy.
+> **Why not `127.0.0.1:27123` directly?** Port 27123 is Obsidian's REST API (custom HTTP protocol). Port 3000 is the MCP Server that translates between MCP protocol (used by your AI) and Obsidian's REST API. They are different protocols - the MCP server acts as a translator/proxy.
 
 ### Windows Firewall blocks WSL2
 

@@ -1,6 +1,6 @@
 # Technical Specification
 
-**Version**: 1.0.6 | **Updated**: 2025-11-06
+**Version**: 1.0.7 | **Updated**: 2025-11-15
 
 ---
 
@@ -11,7 +11,7 @@
 - **Protocol**: MCP 2025-03-26
 - **Runtime**: Node.js 18+
 
-## 11 MCP Tools
+## 12 MCP Tools
 
 | Tool | Purpose | Performance |
 |------|---------|-------------|
@@ -20,6 +20,7 @@
 | `find_files` | Fuzzy file search (60s cache) | ~10ms cached |
 | `read_file` | Read file content | ~30ms |
 | `write_file` | Create/update/append file | ~80ms |
+| `edit_file` | Pattern-based edits (old/new string) | ~60ms |
 | `search` | Full-text search (regex) | 2-3s (1000 files) |
 | `move_file` | Move/rename file | ~150ms |
 | `delete_file` | Delete file (soft delete) | ~80ms |
@@ -98,7 +99,7 @@ npm start      # Production mode
 src/
 ├── server/http.ts          # Express + MCP endpoint
 ├── client/obsidian.ts      # Obsidian API client
-├── tools/                  # 11 MCP tools
+├── tools/                  # 12 MCP tools
 ├── utils/                  # Config, search, batch processing
 └── types/                  # TypeScript interfaces
 ```

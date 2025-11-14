@@ -70,15 +70,15 @@ npm run dev
 
 Server runs on `http://localhost:3000` with hot reload.
 
-### STEP 5: Connect Claude CLI for Testing
+### STEP 5: Connect Your AI for Testing
 
 #### Option 1: Same machine
 
 ```bash
-claude mcp add -s user --transport http obsidian-dev http://localhost:3000/mcp
+claude mcp add -s user --transport http obsidian-dev http://localhost:3000/mcp  # Adapt to your AI
 ```
 
-#### Option 2: Cross-platform (Claude on WSL2, Obsidian on Windows)
+#### Option 2: Cross-platform (AI on WSL2, Obsidian on Windows)
 
 1. Find Windows IP on **Windows PowerShell**:
 
@@ -86,18 +86,13 @@ claude mcp add -s user --transport http obsidian-dev http://localhost:3000/mcp
 ipconfig | findstr "vEthernet"
 ```
 
-1. Connect from **WSL2":
+2. Connect from **WSL2**:
 
 ```bash
-claude mcp add -s user --transport http obsidian-dev http://YOUR_WINDOWS_IP:3000/mcp
+claude mcp add -s user --transport http obsidian-dev http://YOUR_WINDOWS_IP:3000/mcp  # Adapt to your AI
 ```
 
-Verify:
-
-```bash
-claude mcp list
-# Should show: obsidian-dev: http://localhost:3000/mcp (HTTP) - ✓ Connected
-```
+Verify connection in your AI session.
 
 ## Development Workflow
 
@@ -134,7 +129,7 @@ npx tsc --noEmit
 3. Test thoroughly:
    - Verify server starts without errors
    - Test with Claude Code CLI
-   - Check all 11 MCP tools still work
+   - Check all 12 MCP tools still work
 
 4. Commit your changes:
 
@@ -155,8 +150,8 @@ npx tsc --noEmit
 src/
 ├── server/http.ts          # Express + MCP SDK endpoint
 ├── client/obsidian.ts      # HTTP client to Obsidian API
-├── tools/                  # 11 MCP tools
-│   ├── list.ts, read.ts, write.ts, search.ts
+├── tools/                  # 12 MCP tools
+│   ├── list.ts, read.ts, write.ts, edit.ts, search.ts
 │   ├── move.ts, delete.ts, find.ts
 │   ├── fileinfo.ts, directory.ts
 ├── types/
