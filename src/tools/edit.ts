@@ -30,10 +30,24 @@ export async function editFile(
 ): Promise<ToolResult> {
   try {
     // 1. Validation - check required parameters
-    if (!args.path || !args.old_string || args.old_string.length === 0 || args.new_string === undefined) {
+    if (!args.path) {
       return {
         success: false,
-        error: 'path, old_string, and new_string parameters are required',
+        error: 'path parameter is required',
+      };
+    }
+
+    if (!args.old_string || args.old_string.length === 0) {
+      return {
+        success: false,
+        error: 'old_string parameter is required and cannot be empty',
+      };
+    }
+
+    if (args.new_string === undefined) {
+      return {
+        success: false,
+        error: 'new_string parameter is required',
       };
     }
 
@@ -92,26 +106,32 @@ export async function editFile(
       },
     };
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
+    if (error instanceof Error) {
+      const code = (error as NodeJS.ErrnoException).code;
 
-    // Provide clearer error messages for common cases
-    if (message.includes('ENOENT')) {
+      if (code === 'ENOENT') {
+        return {
+          success: false,
+          error: `File not found: ${args.path}`,
+        };
+      }
+
+      if (code === 'EACCES' || code === 'EPERM') {
+        return {
+          success: false,
+          error: `Permission denied: ${args.path}`,
+        };
+      }
+
       return {
         success: false,
-        error: `File not found: ${args.path}`,
-      };
-    }
-
-    if (message.includes('EACCES') || message.includes('EPERM')) {
-      return {
-        success: false,
-        error: `Permission denied: ${args.path}`,
+        error: error.message,
       };
     }
 
     return {
       success: false,
-      error: message,
+      error: 'Unknown error',
     };
   }
 }
