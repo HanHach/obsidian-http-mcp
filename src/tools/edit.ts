@@ -30,7 +30,7 @@ export async function editFile(
 ): Promise<ToolResult> {
   try {
     // 1. Validation - check required parameters
-    if (!args.path || !args.old_string || args.new_string === undefined) {
+    if (!args.path || !args.old_string || args.old_string.length === 0 || args.new_string === undefined) {
       return {
         success: false,
         error: 'path, old_string, and new_string parameters are required',
@@ -60,6 +60,18 @@ export async function editFile(
       };
     }
 
+    // 4.5. Check for no-op (identical strings)
+    if (args.old_string === args.new_string) {
+      return {
+        success: true,
+        data: {
+          path: args.path,
+          occurrences_replaced: 0,
+          message: 'No changes needed (strings identical)',
+        },
+      };
+    }
+
     // 5. Perform replacement
     const newContent = args.replace_all
       ? content.replaceAll(args.old_string, args.new_string)
@@ -80,9 +92,26 @@ export async function editFile(
       },
     };
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+
+    // Provide clearer error messages for common cases
+    if (message.includes('ENOENT')) {
+      return {
+        success: false,
+        error: `File not found: ${args.path}`,
+      };
+    }
+
+    if (message.includes('EACCES') || message.includes('EPERM')) {
+      return {
+        success: false,
+        error: `Permission denied: ${args.path}`,
+      };
+    }
+
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
+      error: message,
     };
   }
 }
