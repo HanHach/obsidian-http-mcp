@@ -70,3 +70,10 @@ export interface CreateDirectoryData {
   created: boolean;
   message: string;
 }
+
+export interface EditFileArgs {
+  path: string;
+  old_string: string;
+  new_string: string;
+  replace_all?: boolean;
+}

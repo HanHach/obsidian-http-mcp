@@ -15,6 +15,7 @@ import { deleteFile, deleteFolder } from '../tools/delete.js';
 import { findFiles } from '../tools/find.js';
 import { getFileInfo } from '../tools/fileinfo.js';
 import { createDirectory } from '../tools/directory.js';
+import { editFile } from '../tools/edit.js';
 import type {
   ListDirArgs,
   ListFilesArgs,
@@ -27,6 +28,7 @@ import type {
   FindFilesArgs,
   GetFileInfoArgs,
   CreateDirectoryArgs,
+  EditFileArgs,
 } from '../types/tools.js';
 import { VERSION } from '../utils/version.js';
 
@@ -260,6 +262,32 @@ export function createHttpServer(client: ObsidianClient, port: number) {
             required: ['path'],
           },
         },
+        {
+          name: 'edit_file',
+          description: 'Surgically edit file content using exact string replacement (pattern matching). Use this for arbitrary text edits anywhere in the file. IMPORTANT: old_string must match exactly (including whitespace/indentation). Include enough context to make old_string unique. For structured edits (headings/frontmatter), consider using patch_file instead (coming soon).',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: 'File path to edit (e.g., "Notes/meeting.md")'
+              },
+              old_string: {
+                type: 'string',
+                description: 'Exact text to replace (must match exactly including whitespace). Include enough context to ensure uniqueness. TIP: If multiple matches exist, either use replace_all or add more surrounding context.'
+              },
+              new_string: {
+                type: 'string',
+                description: 'Replacement text. Can be empty string for deletion.'
+              },
+              replace_all: {
+                type: 'boolean',
+                description: 'Replace all occurrences (default: false). If false and multiple matches exist, returns error. Use true only when intentionally replacing all instances.'
+              }
+            },
+            required: ['path', 'old_string', 'new_string'],
+          },
+        },
       ],
     };
   });
@@ -302,6 +330,9 @@ export function createHttpServer(client: ObsidianClient, port: number) {
         break;
       case 'create_directory':
         result = await createDirectory(client, (args || {}) as unknown as CreateDirectoryArgs);
+        break;
+      case 'edit_file':
+        result = await editFile(client, (args || {}) as unknown as EditFileArgs);
         break;
       default:
         throw new Error(`Unknown tool: ${name}`);

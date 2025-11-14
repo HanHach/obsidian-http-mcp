@@ -91,7 +91,39 @@
 
 ---
 
-### v1.0.7 - Tree Tool
+### v1.0.7 - Edit File Tool ✅ COMPLETED
+
+**Goal**: Pattern matching edits for surgical file modifications
+
+**Status**: Implemented in branch review-project-documentation (commit 5590ad2)
+
+**API**:
+```typescript
+edit_file({
+  path: string,
+  old_string: string,
+  new_string: string,
+  replace_all?: boolean
+})
+```
+
+**Features**:
+- Pattern matching: old_string must match exactly (including whitespace)
+- Uniqueness validation: Errors if multiple matches without replace_all flag
+- replace_all flag: Optionally replace all occurrences
+- Cache invalidation for immediate discoverability
+
+**Implementation**: src/tools/edit.ts (88 lines)
+
+**Token impact**: Enables surgical edits without full file rewrites (AI still reads full file, but avoids manual rewrite)
+
+**Why not PATCH**: Local REST API PATCH requires AI to read full file anyway to discover heading names. Pattern matching is more flexible and structure-agnostic.
+
+**Effort**: ~90 lines, 3 files modified
+
+---
+
+### v1.0.8 - Tree Tool
 
 **Goal**: Display vault structure as readable tree
 
@@ -115,7 +147,7 @@ TECH/
 
 ---
 
-### v1.0.8 - Rename Tool
+### v1.0.9 - Rename Tool
 
 **Goal**: Unified tool for renaming files and directories
 
@@ -158,65 +190,6 @@ rename({ path: "PERSO", newName: "Passions-Perso", type: "directory" })
 **Token impact**: Clearer intent for AI (no confusion about file vs folder)
 
 **Effort**: ~100 lines, 2 files modified
-
----
-
-### v1.0.9 - Patch File Tool
-
-**Goal**: Surgical file edits via Obsidian PATCH API
-
-**Why**: Current approach requires full file overwrite for small edits (e.g., changing a title). PATCH allows targeted modifications.
-
-**API**:
-```typescript
-patch_file({
-  path: string,
-  operation: "append" | "prepend" | "replace",
-  target_type: "heading" | "block" | "frontmatter",
-  target: string,
-  content: string
-})
-```
-
-**Features**:
-- ✅ Modify specific headings without rewriting entire file
-- ✅ Edit frontmatter fields precisely
-- ✅ Insert content relative to block references
-- ✅ Three operations: append (after), prepend (before), replace
-
-**Examples**:
-```typescript
-// Replace a heading title
-patch_file({
-  path: "note.md",
-  operation: "replace",
-  target_type: "heading",
-  target: "Old Title",
-  content: "🔸[Claude] New Title"
-})
-
-// Set frontmatter field
-patch_file({
-  path: "note.md",
-  operation: "replace",
-  target_type: "frontmatter",
-  target: "status",
-  content: "done"
-})
-
-// Append content below heading
-patch_file({
-  path: "note.md",
-  operation: "append",
-  target_type: "heading",
-  target: "Notes",
-  content: "- New item added"
-})
-```
-
-**Token impact**: ~95% reduction for small edits (example: change title = 100 tokens instead of 5,000 for full file rewrite)
-
-**Effort**: ~100-120 lines, 2 files modified
 
 ---
 
