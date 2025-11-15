@@ -6,7 +6,7 @@ The first HTTP-native MCP server for Obsidian that solves stdio transport bugs a
 
 **Also compatible with**: Claude Desktop, Codex, Gemini, and other MCP clients
 
-[![npm version](https://badge.fury.io/js/obsidian-http-mcp.svg)](https://www.npmjs.com/package/obsidian-http-mcp)
+[![npm version](https://img.shields.io/npm/v/obsidian-http-mcp)](https://www.npmjs.com/package/obsidian-http-mcp)
 [![npm](https://img.shields.io/npm/dm/obsidian-http-mcp)](https://www.npmjs.com/package/obsidian-http-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![Sponsor](https://img.shields.io/github/sponsors/NasAndNora?style=flat&logo=githubsponsors)](https://github.com/sponsors/NasAndNora)
@@ -64,7 +64,7 @@ Claude Code controlling an Obsidian vault via HTTP-native MCP - no stdio bugs, j
 2. **Node.js 18+** - [Download here](https://nodejs.org/)
 3. **MCP-compatible AI** (e.g., [Claude Code CLI](https://claude.ai/code), Claude Desktop, Codex, etc.)
 
-### STEP 1: Configure Obsidian Plugin
+#### STEP 1: Configure Obsidian Plugin
 
 - Settings → Community Plugins → Search "Local REST API" → Enable
 - Enable "Non encrypted (HTTP) API"
@@ -72,7 +72,7 @@ Claude Code controlling an Obsidian vault via HTTP-native MCP - no stdio bugs, j
 
 ---
 
-### STEP 2: Install & Setup
+#### STEP 2: Install & Setup
 
 **Install where Obsidian is installed:**
 
@@ -89,7 +89,7 @@ obsidian-http-mcp --setup
 
 ---
 
-### STEP 3: Start Server
+#### STEP 3: Start Server
 
 **Where you installed (same system as Obsidian):**
 
@@ -101,7 +101,7 @@ obsidian-http-mcp
 
 ---
 
-### STEP 4: Connect Your AI
+#### STEP 4: Connect Your AI
 
 **If your AI runs where the server is installed:**
 
@@ -129,7 +129,7 @@ claude mcp add -s user --transport http obsidian-http http://SERVER_IP:3000/mcp 
 
 ---
 
-### STEP 5: Use with Your AI
+#### STEP 5: Use with Your AI
 
 Run where your AI is installed (Windows, Linux, or WSL2):
 
