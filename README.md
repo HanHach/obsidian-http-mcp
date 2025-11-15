@@ -62,7 +62,7 @@ obsidian-http-mcp
 **If your AI runs where the server is installed:**
 
 ```bash
-claude mcp add -s user --transport http obsidian http://localhost:3000/mcp  # Adapt command to your AI
+claude mcp add -s user --transport http obsidian-http http://localhost:3000/mcp  # Adapt command to your AI
 ```
 
 **If your AI runs elsewhere** (e.g., Claude on WSL2, server on Windows):
@@ -80,7 +80,7 @@ ip addr show | grep inet
 2. Connect from **where your AI runs**:
 
 ```bash
-claude mcp add -s user --transport http obsidian http://SERVER_IP:3000/mcp  # Adapt command to your AI
+claude mcp add -s user --transport http obsidian-http http://SERVER_IP:3000/mcp  # Adapt command to your AI
 ```
 
 ---
@@ -172,7 +172,7 @@ ipconfig | findstr "IPv4"
 Then reconnect from **WSL2 terminal**:
 
 ```bash
-claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp
+claude mcp add -s user --transport http obsidian-http http://YOUR_IP:3000/mcp
 # Replace YOUR_IP with the IP from above
 ```
 

@@ -25,7 +25,7 @@ ipconfig | findstr "IPv4"
 **Step 2 - Reconnect your AI from WSL2:**
 
 ```bash
-claude mcp add -s user --transport http obsidian http://YOUR_IP:3000/mcp  # Adapt to your AI
+claude mcp add -s user --transport http obsidian-http http://YOUR_IP:3000/mcp  # Adapt to your AI
 # Replace YOUR_IP with the IP from Step 1
 # The -s user flag ensures global installation (not project-local)
 ```
@@ -211,10 +211,10 @@ obsidian-http-mcp
 
 ```bash
 # Remove old connection (example with Claude Code)
-claude mcp remove obsidian  # Adapt to your AI
+claude mcp remove obsidian-http  # Adapt to your AI
 
 # Add new connection (adjust URL for your setup)
-claude mcp add --transport http obsidian http://localhost:3000/mcp  # Adapt to your AI
+claude mcp add --transport http obsidian-http http://localhost:3000/mcp  # Adapt to your AI
 ```
 
 ---
