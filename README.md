@@ -175,8 +175,6 @@ obsidian-http-mcp
 - Search across thousands of notes in seconds with full regex support
 - Move, rename, or delete files with built-in safety features
 
-**Coming in v1.1**: Token optimization (partial file reads), native search API - see [ROADMAP.md](./ROADMAP.md)
-
 See [TECHNICAL.md](./TECHNICAL.md) for complete tool specifications and architecture details.
 
 ---

@@ -40,11 +40,9 @@
   "files": [
     "dist/",
     "README.md",
-    "CHANGELOG.md",
     "TECHNICAL.md",
     "TROUBLESHOOTING.md",
     "SECURITY.md",
-    "ROADMAP.md",
     "CONTRIBUTING.md",
     "LICENSE"
   ],
